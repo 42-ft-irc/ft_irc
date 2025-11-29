@@ -1,0 +1,22 @@
+# ft_irc
+
+An IRC (Internet Relay Chat) server implementation in C++98.
+
+## Description
+
+ft_irc is a project that involves creating your own IRC server. The server handles multiple clients simultaneously and implements the IRC protocol for real-time text messaging.
+
+## Features
+
+- Multi-client support using non-blocking I/O
+- User authentication with password
+- Channel operations (JOIN, PART, TOPIC, KICK, INVITE, MODE)
+- Private messaging
+- Operator privileges
+
+## Requirements
+
+- C++98 compiler
+- Make
+
+## Build
