@@ -18,5 +18,3 @@ ft_irc is a project that involves creating your own IRC server. The server handl
 
 - C++98 compiler
 - Make
-
-## Build
