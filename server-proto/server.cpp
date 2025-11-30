@@ -70,7 +70,7 @@ int	main () {
 				else {
 					char	buffer[1024];
 					int	bytes = recv(fds[i].fd, buffer, sizeof(buffer) - 1, 0);
-					if (bytes < 0) {
+					if (bytes <= 0) {
 						std::cout << "client: " << fds[i].fd << "removed" << std::endl;
 						close(fds[i].fd);
 						fds.erase(fds.begin() + i);

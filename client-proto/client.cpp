@@ -55,6 +55,8 @@ int main()
         std::cout << "Sent " << bytes_sent << " bytes: " << msg << std::endl;
     }
 
+	sleep(3);
+	bytes_sent = send(sockfd, msg, strlen(msg), 0);
     // cleanup
     freeaddrinfo(res);
     close(sockfd);
