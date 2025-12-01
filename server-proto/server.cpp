@@ -79,10 +79,19 @@ int	main () {
 					else {
 						buffer[bytes] = '\0';
 						std::cout << "Client " << fds[i].fd << ": " << buffer << std::endl;
+
+						int sender_fd = fds[i].fd;
+						for (size_t j = 0; j < fds.size(); j++) {
+							int dest_fd = fds[j].fd;
+							if (dest_fd != listener_fd && dest_fd != sender_fd) {
+								if (send(fds[i].fd, buffer, bytes, 0) < 0) {
+									std::cerr << "Fehler beim Senden an " << dest_fd << std::endl;
+								}
+							}
+						}
 					}
 				}
 			}
 		}
 	}
-
 }
