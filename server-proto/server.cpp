@@ -85,7 +85,7 @@ int	main () {
 							int dest_fd = fds[j].fd;
 							if (dest_fd != listener_fd && dest_fd != sender_fd) {
 								if (send(fds[i].fd, buffer, bytes, 0) < 0) {
-									std::cerr << "Fehler beim Senden an " << dest_fd << std::endl;
+									std::cerr << "problem while sending to: " << dest_fd << std::endl;
 								}
 							}
 						}
