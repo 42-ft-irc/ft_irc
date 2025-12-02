@@ -7,7 +7,7 @@ CLIENT_NAME = client
 SERVER_DIR = server-proto
 CLIENT_DIR = client-proto
 
-SERVER_SRCS = $(SERVER_DIR)/server.cpp
+SERVER_SRCS = $(SERVER_DIR)/server.cpp $(SERVER_DIR)/main.cpp
 CLIENT_SRCS = $(CLIENT_DIR)/client.cpp $(CLIENT_DIR)/util.cpp
 
 SERVER_OBJS = $(SERVER_SRCS:.cpp=.o)

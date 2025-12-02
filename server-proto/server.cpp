@@ -1,58 +1,51 @@
-#include <iostream>
-#include <sys/socket.h>	// socket(), bind(), listen(), accept()
-#include <netinet/in.h>	// sockaddr_in, htons()
-#include <poll.h>
-#include <vector>
-#include <unistd.h>		// close()
-#include <fcntl.h>
+#include "server.hpp"
 
-int	main () {
-	int	listener_fd = socket(AF_INET, SOCK_STREAM, 0);
-	if (listener_fd < 0) {
+server::server( void ) : _port(6667) {}
+server::server( int port ) : _port(port){}
+server::~server() {}
+
+int	server::startServer( void ) {
+	_listener_fd = socket(AF_INET, SOCK_STREAM, 0);
+	if (_listener_fd < 0) {
 		std::cerr << "problem while creating socket" << std::endl;
 		return 1;
 	}
 
 	int opt = 1;
-	setsockopt(listener_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+	setsockopt(_listener_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 
-	fcntl(listener_fd, F_SETFL, O_NONBLOCK);
+	fcntl(_listener_fd, F_SETFL, O_NONBLOCK);
 
-	struct sockaddr_in address;
-	address.sin_family = AF_INET;
-	address.sin_addr.s_addr = INADDR_ANY;
-	address.sin_port = htons(6667);
+	setAdress();
 
-	if (bind(listener_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
+	if (bind(_listener_fd, (struct sockaddr *)&_address, sizeof(_address)) < 0) {
 		std::cerr << "problem while binding socket and adress" << std::endl;
 		return 1;
 	}
 
-	if (listen(listener_fd, 10) < 0) {
+	if (listen(_listener_fd, 10) < 0) {
 		std::cerr << "problem while trying to listen to socket" << std::endl;
 		return 1;
 	}
 
-	std::cout << "server is up, listening to port 6667" << std::endl;
+	std::cout << "server is up, listening to port " << _port << std::endl;
 
-	std::vector<struct pollfd> fds;
+	return (0);
+}
 
-	struct pollfd pfd;
-	pfd.fd = listener_fd;
-	pfd.events = POLLIN;
-	pfd.revents = 0;
-	fds.push_back(pfd);
+int	server::runServerLoop( void ) {
+	addFD( _listener_fd );
 
 	while (true) {
-		if (poll(&fds[0], fds.size(), -1) < 0) {
+		if (poll(&_fds[0], _fds.size(), -1) < 0) {
 			std::cerr << "problem while running poll" << std::endl;
 			break ;
 		}
 
-		for (size_t i = 0; i < fds.size(); i++) {
-			if (fds[i].revents & POLLIN) {
-				if (fds[i].fd == listener_fd) {
-					int	new_fd = accept(listener_fd, NULL, NULL);
+		for (size_t i = 0; i < _fds.size(); i++) {
+			if (_fds[i].revents & POLLIN) {
+				if (_fds[i].fd == _listener_fd) {
+					int	new_fd = accept(_listener_fd, NULL, NULL);
 					if (new_fd < 0) {
 						std::cerr << "accept failed" << std::endl;
 						continue ;
@@ -63,27 +56,27 @@ int	main () {
 					new_pfd.fd = new_fd;
 					new_pfd.events = POLLIN;
 					new_pfd.revents = 0;
-					fds.push_back(new_pfd);
+					_fds.push_back(new_pfd);
 
 					std::cout << "new client added" << std::endl;
 				}
 				else {
 					char	buffer[1024];
-					int	bytes = recv(fds[i].fd, buffer, sizeof(buffer) - 1, 0);
+					int	bytes = recv(_fds[i].fd, buffer, sizeof(buffer) - 1, 0);
 					if (bytes <= 0) {
-						std::cout << "client: " << fds[i].fd << "removed" << std::endl;
-						close(fds[i].fd);
-						fds.erase(fds.begin() + i);
+						std::cout << "client: " << _fds[i].fd << "removed" << std::endl;
+						close(_fds[i].fd);
+						_fds.erase(_fds.begin() + i);
 						i--;
 					}
 					else {
 						buffer[bytes] = '\0';
-						std::cout << "Client " << fds[i].fd << ": " << buffer << std::endl;
+						std::cout << "Client " << _fds[i].fd << ": " << buffer << std::endl;
 
-						int sender_fd = fds[i].fd;
-						for (size_t j = 0; j < fds.size(); j++) {
-							int dest_fd = fds[j].fd;
-							if (dest_fd != listener_fd && dest_fd != sender_fd) {
+						int sender_fd = _fds[i].fd;
+						for (size_t j = 0; j < _fds.size(); j++) {
+							int dest_fd = _fds[j].fd;
+							if (dest_fd != _listener_fd && dest_fd != sender_fd) {
 								if (send(dest_fd, buffer, bytes, 0) < 0) {
 									std::cerr << "problem while sending to: " << dest_fd << std::endl;
 								}
@@ -94,4 +87,19 @@ int	main () {
 			}
 		}
 	}
+	return (0);
+}
+
+void	server::setAdress( void ) {
+	_address.sin_family = AF_INET;
+	_address.sin_addr.s_addr = INADDR_ANY;
+	_address.sin_port = htons(_port);
+}
+
+void	server::addFD( int new_fd ) {
+	struct pollfd pfd;
+	pfd.fd = new_fd;
+	pfd.events = POLLIN;
+	pfd.revents = 0;
+	_fds.push_back(pfd);
 }
