@@ -69,18 +69,17 @@ int	server::runServerLoop( void ) {
 						_fds.erase(_fds.begin() + i);
 						i--;
 					}
-					else {
+					else {	
 						buffer[bytes] = '\0';
-						std::cout << "Client " << _fds[i].fd << ": " << buffer << std::endl;
+						std::string raw_data(buffer);
+						//std::cout << "Client " << _fds[i].fd << ": " << buffer << std::endl;
 
-						int sender_fd = _fds[i].fd;
-						for (size_t j = 0; j < _fds.size(); j++) {
-							int dest_fd = _fds[j].fd;
-							if (dest_fd != _listener_fd && dest_fd != sender_fd) {
-								if (send(dest_fd, buffer, bytes, 0) < 0) {
-									std::cerr << "problem while sending to: " << dest_fd << std::endl;
-								}
-							}
+						try {
+							message msg = parseMessage(raw_data);
+							executeMessage(_fds[i].fd, msg);
+						} 
+						catch (const std::exception& e) {
+							std::cerr << "Error: " << e.what() << std::endl;
 						}
 					}
 				}

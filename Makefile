@@ -4,7 +4,7 @@ CXXFLAGS = -Wall -Wextra -Werror -std=c++98
 SERVER_NAME = server
 CLIENT_NAME = client
 
-SERVER_DIR = server-proto
+SERVER_DIR = server-proto/srcs
 CLIENT_DIR = client-proto
 
 SERVER_SRCS = $(SERVER_DIR)/server.cpp $(SERVER_DIR)/main.cpp
@@ -16,7 +16,7 @@ CLIENT_OBJS = $(CLIENT_SRCS:.cpp=.o)
 all: $(SERVER_NAME) $(CLIENT_NAME)
 
 $(SERVER_NAME): $(SERVER_OBJS)
-	$(CXX) $(CXXFLAGS) $(SERVER_OBJS) -o $(SERVER_NAME)
+	$(CXX) $(CXXFLAGS) $(SERVER_OBJS) -o $(SERVER_NAME) -I includes/
 
 $(CLIENT_NAME): $(CLIENT_OBJS)
 	$(CXX) $(CXXFLAGS) $(CLIENT_OBJS) -o $(CLIENT_NAME)
