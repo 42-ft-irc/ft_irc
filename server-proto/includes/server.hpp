@@ -38,14 +38,19 @@ class server
 		void	addFD( int new_fd );
 		int		removeClient( int fd, int i );
 		void	processClientCommands( int fd );
+
+		// command helpers
 		void	welcomeClient( int fd );
 		void	initCommands( void );
+		void	sendReply(int fd, const std::string& msg);
 
 		// command handlers
 		void	handleCap( int fd, message &msg );
 		void	handleNick( int fd, message &msg );
 		void	handleUser( int fd, message &msg );
 		void	handlePing( int fd, message &msg );
+
+		void	handleJoin( int fd, message &msg );
 
 		class ServerException : public std::runtime_error {
             public:
