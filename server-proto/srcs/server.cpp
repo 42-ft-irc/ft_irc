@@ -1,5 +1,7 @@
 #include "server.hpp"
 
+extern bool isRunning;
+
 server::server( void ) : _port(PORT) {}
 server::server( int port ) : _port(port){}
 server::~server() {
@@ -37,10 +39,13 @@ int	server::startServer( void ) {
 
 int	server::runServerLoop( void ) {
 	addFD( _listener_fd );
-	while (true) {
-		if (poll(&_fds[0], _fds.size(), -1) < 0) {
-			std::cerr << "problem while running poll" << std::endl;
-			break ;
+	while (isRunning) {
+		if (poll(&_fds[0], _fds.size(), TIMEOUT_POLL) < 0) {
+			if (errno == EINTR) {
+                continue;
+            }
+            std::cerr << "Error in poll: " << strerror(errno) << std::endl;
+            break;
 		}
 		for (size_t i = 0; i < _fds.size(); i++) {
 			if (_fds[i].revents & POLLIN) {
