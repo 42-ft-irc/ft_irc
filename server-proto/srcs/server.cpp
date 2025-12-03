@@ -64,20 +64,24 @@ int	server::runServerLoop( void ) {
 						i = removeClient( _fds[i].fd, i );
 					else {
 						buffer[bytes] = '\0';
-						std::string raw_data(buffer);
-						std::cout << "Raw: [";
-						for (size_t j = 0; j < raw_data.size(); j++) {
-							if (raw_data[j] == '\r') std::cout << "\\r";
-							else if (raw_data[j] == '\n') std::cout << "\\n";
-							else std::cout << raw_data[j];
-						}
-						std::cout << "]" << std::endl;
-						try {
-							message msg = parseMessage(raw_data);
-							executeMessage(_fds[i].fd, msg);
-						} 
-						catch (const std::exception& e) {
-							std::cerr << "Error: " << e.what() << std::endl;
+						client* c = _clients[_fds[i].fd];
+						c->appendToBuffer(buffer);
+
+						size_t pos;
+						while ((pos = c->getRecvBuffer().find("\r\n")) != std::string::npos) {
+							std::string single_msg = c->getRecvBuffer().substr(0, pos);
+							c->eraseFromBuffer(pos + 2);
+
+							if (single_msg.empty())
+								continue;
+
+							try {
+								message msg = parseMessage(single_msg);
+								executeMessage(_fds[i].fd, msg);
+							}
+							catch (const std::exception& e) {
+								std::cerr << "Error: " << e.what() << std::endl;
+							}
 						}
 					}
 				}
