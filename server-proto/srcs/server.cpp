@@ -9,6 +9,10 @@ server::~server() {
 		close(it->first);
 	}
 	_clients.clear();
+	for (std::map<std::string, channel*>::iterator it = _channels.begin(); it != _channels.end(); ++it) {
+        delete it->second;
+    }
+    _channels.clear();
 	_fds.clear();
 }
 

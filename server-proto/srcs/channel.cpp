@@ -55,10 +55,12 @@ bool channel::isOperator(client* c) {
 }
 
 void channel::broadcast(std::string message, client* sender) {
+	std::string fullMsg = message + "\r\n"; 
+	
 	for (size_t i = 0; i < _clients.size(); i++) {
 		if (_clients[i] != sender) {
 			int fd = _clients[i]->getFD();
-			send(fd, message.c_str(), message.size(), 0);
+			send(fd, fullMsg.c_str(), fullMsg.size(), 0);
 		}
 	}
 }

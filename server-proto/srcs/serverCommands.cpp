@@ -114,6 +114,22 @@ void server::handlePrivmsg(int fd, message &msg) {
 	std::string target = msg.params[0];
 	std::string text = msg.params[1];
 
+	if (target[0] == '#') {
+		if (_channels.find(target) != _channels.end()) {
+			channel* chan = _channels[target];
+			// Optional: Prüfen ob Sender Mitglied ist (wenn +n Mode aktiv ist)
+			if (chan->isMember(sender)) {
+				std::string fullMsg = ":" + senderNick + "!" + sender->getUsername() + "@localhost PRIVMSG " + target + " :" + text;
+				chan->broadcast(fullMsg, sender); // Sender ausschließen
+			} else {
+				sendReply(fd, ":server 404 " + senderNick + " " + target + " :Cannot send to channel");
+			}
+		} else {
+			sendReply(fd, ":server " ERR_NOSUCHNICK " " + senderNick + " " + target + " :No such channel");
+		}
+		return; 
+	}
+
 	client* recipient = findClientByNick(target);
 	if (!recipient) {
 		sendReply(fd, ":server " ERR_NOSUCHNICK " " + senderNick + " " + target + " :No such nick/channel");
