@@ -12,6 +12,7 @@ server::~server() {
 }
 
 int	server::startServer( void ) {
+	initCommands();
 	_listener_fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (_listener_fd < 0)
 		throw ServerException("Failed to create socket");
