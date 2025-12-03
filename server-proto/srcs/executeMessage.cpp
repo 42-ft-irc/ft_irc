@@ -1,6 +1,6 @@
 #include "server.hpp"
 
-void	server::executeMessage( int sender_fd, message msg) {
+void	server::executeMessage( int sender_fd, message &msg) {
 	for (size_t j = 0; j < _fds.size(); j++) {
 		int dest_fd = _fds[j].fd;
 		if (dest_fd != _listener_fd && dest_fd != sender_fd) {

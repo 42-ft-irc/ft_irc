@@ -19,10 +19,11 @@ class server
 		int		runServerLoop( void );
 
 		// message func
-		message	parseMessage( std::string raw_data );
-		void	executeMessage( int sender_fd, message msg);
+		message	parseMessage( const std::string &raw_data );
+		void	executeMessage( int sender_fd, message &msg);
 
 		// helper func
 		void	setAdress( void );
 		void	addFD( int new_fd );
+		int		removeClient( int fd, int i );
 };
