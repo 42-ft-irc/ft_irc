@@ -12,11 +12,12 @@ typedef void (server::*CommandHandler)(int, message&);
 class server
 {
 	private:
-		int									_listener_fd;
-		int									_port;
-		struct sockaddr_in					_address;
-		std::vector<struct pollfd>			_fds;
-		std::map<int, client*>				_clients;
+		int										_listener_fd;
+		int										_port;
+		struct sockaddr_in						_address;
+		std::vector<struct pollfd>				_fds;
+		std::map<int, client*>					_clients;
+		std::map<std::string, channel*>			_channels;
 		std::map<std::string, CommandHandler>	_commands;
 
 	public:

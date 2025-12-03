@@ -16,6 +16,7 @@
 #include <cstring>
 #include <stdexcept>
 #include <csignal>
+#include <algorithm>
 
 
 #endif
