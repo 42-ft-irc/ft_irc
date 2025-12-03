@@ -3,38 +3,35 @@
 server::server( void ) : _port(6667) {}
 server::server( int port ) : _port(port){}
 server::~server() {
-	for (size_t i = 0; i < _fds.size(); i++) {
-		close(_fds[i].fd);
+	for (std::map<int, client*>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
+		delete it->second;
+		close(it->first);
 	}
 	_clients.clear();
+	_fds.clear();
 }
 
 int	server::startServer( void ) {
 	_listener_fd = socket(AF_INET, SOCK_STREAM, 0);
-	if (_listener_fd < 0) {
-		std::cerr << "problem while creating socket" << std::endl;
-		return 1;
-	}
+	if (_listener_fd < 0)
+		throw ServerException("Failed to create socket");
 
 	int opt = 1;
-	setsockopt(_listener_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+	if (setsockopt(_listener_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
+		throw ServerException("Failed to set SO_REUSEADDR");
 
-	fcntl(_listener_fd, F_SETFL, O_NONBLOCK);
+	if (fcntl(_listener_fd, F_SETFL, O_NONBLOCK) < 0)
+		throw ServerException("Failed to set O_NONBLOCK");
 
 	setAddress();
 
-	if (bind(_listener_fd, reinterpret_cast<struct sockaddr*>(&_address), sizeof(_address)) < 0) {
-		std::cerr << "problem while binding socket and adress" << std::endl;
-		return 1;
-	}
+	if (bind(_listener_fd, reinterpret_cast<struct sockaddr*>(&_address), sizeof(_address)) < 0)
+		throw ServerException("Failed to bind socket");
 
-	if (listen(_listener_fd, 10) < 0) {
-		std::cerr << "problem while trying to listen to socket" << std::endl;
-		return 1;
-	}
+	if (listen(_listener_fd, 10) < 0)
+		throw ServerException("Failed to listen on socket");
 
 	std::cout << "server is up, listening to port " << _port << std::endl;
-
 	return (0);
 }
 

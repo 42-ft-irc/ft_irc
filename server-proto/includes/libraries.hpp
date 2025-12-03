@@ -12,5 +12,9 @@
 #include <sstream>
 #include <map>
 #include <exception>
+#include <cerrno>
+#include <cstring>
+#include <stdexcept>
+
 
 #endif

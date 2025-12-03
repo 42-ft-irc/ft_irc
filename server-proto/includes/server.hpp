@@ -32,16 +32,13 @@ class server
 		void	addFD( int new_fd );
 		int		removeClient( int fd, int i );
 
-		class ServerException : public std::exception {
-			private:
-				const char* _msg;
-			public:
-				ServerException(const char* msg) throw() : _msg(msg) {}
-				virtual ~ServerException() throw() {}
-				virtual const char* what() const throw() {
-					return _msg;
-				}
-		};
+		class ServerException : public std::runtime_error {
+            public:
+                ServerException(const std::string &msg) 
+                    : std::runtime_error(msg + ": " + std::strerror(errno)) {}
+                ServerException(const std::string &msg, bool useErrno) 
+                    : std::runtime_error(useErrno ? (msg + ": " + std::strerror(errno)) : msg) {}
+        };
 };
 
 #endif
