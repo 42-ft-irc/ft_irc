@@ -20,6 +20,14 @@ class client
 		const std::string&	getRecvBuffer( void ) const;
 		void				appendToBuffer( const std::string &data );
 		void				eraseFromBuffer( size_t len );
+
+		const std::string&	getNickname() const;
+		const std::string&	getUsername() const;
+		bool				isRegistered() const;
+
+		void				setNickname(const std::string& nick);
+		void				setUsername(const std::string& user);
+		void				setRegistered(bool status);
 };
 
 #endif
