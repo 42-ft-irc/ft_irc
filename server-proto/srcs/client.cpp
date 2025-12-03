@@ -19,3 +19,11 @@ void	client::appendToBuffer( const std::string &data ) {
 void	client::eraseFromBuffer( size_t len ) {
 	_recv_buffer.erase(0, len);
 }
+
+const std::string&	client::getNickname() const { return _nickname; }
+const std::string&	client::getUsername() const { return _username; }
+bool	client::isRegistered() const { return _isRegistered; }
+
+void	client::setNickname(const std::string& nick) { _nickname = nick; }
+void	client::setUsername(const std::string& user) { _username = user; }
+void	client::setRegistered(bool status) { _isRegistered = status; }

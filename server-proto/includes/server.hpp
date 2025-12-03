@@ -6,14 +6,18 @@
 #include "channel.hpp"
 #include "constants.hpp"
 
+class server;
+typedef void (server::*CommandHandler)(int, message&);
+
 class server
 {
 	private:
-		int							_listener_fd;
-		int							_port;
-		struct sockaddr_in			_address;
-		std::vector<struct pollfd>	_fds;
-		std::map<int, client*>		_clients;
+		int									_listener_fd;
+		int									_port;
+		struct sockaddr_in					_address;
+		std::vector<struct pollfd>			_fds;
+		std::map<int, client*>				_clients;
+		std::map<std::string, CommandHandler>	_commands;
 
 	public:
 		server( void );
@@ -32,6 +36,15 @@ class server
 		void	setAddress( void );
 		void	addFD( int new_fd );
 		int		removeClient( int fd, int i );
+		void	processClientCommands( int fd );
+		void	welcomeClient( int fd );
+		void	initCommands( void );
+
+		// command handlers
+		void	handleCap( int fd, message &msg );
+		void	handleNick( int fd, message &msg );
+		void	handleUser( int fd, message &msg );
+		void	handlePing( int fd, message &msg );
 
 		class ServerException : public std::runtime_error {
             public:

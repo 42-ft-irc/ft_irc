@@ -61,25 +61,8 @@ int	server::runServerLoop( void ) {
 						i = removeClient( _fds[i].fd, i );
 					else {
 						buffer[bytes] = '\0';
-						client* c = _clients[_fds[i].fd];
-						c->appendToBuffer(buffer);
-
-						size_t pos;
-						while ((pos = c->getRecvBuffer().find("\r\n")) != std::string::npos) {
-							std::string single_msg = c->getRecvBuffer().substr(0, pos);
-							c->eraseFromBuffer(pos + 2);
-
-							if (single_msg.empty())
-								continue;
-
-							try {
-								message msg = parseMessage(single_msg);
-								executeMessage(_fds[i].fd, msg);
-							}
-							catch (const std::exception& e) {
-								std::cerr << "Error: " << e.what() << std::endl;
-							}
-						}
+						_clients[_fds[i].fd]->appendToBuffer(buffer);
+						processClientCommands(_fds[i].fd);
 					}
 				}
 			}
@@ -113,4 +96,25 @@ void	server::addFD( int new_fd ) {
 	pfd.revents = 0;
 	_fds.push_back(pfd);
 	std::cout << "new client added" << std::endl;
+}
+
+void	server::processClientCommands( int fd ) {
+	client* c = _clients[fd];
+	size_t pos;
+
+	while ((pos = c->getRecvBuffer().find("\r\n")) != std::string::npos) {
+		std::string single_msg = c->getRecvBuffer().substr(0, pos);
+		c->eraseFromBuffer(pos + 2);
+
+		if (single_msg.empty())
+			continue;
+
+		try {
+			message msg = parseMessage(single_msg);
+			executeMessage(fd, msg);
+		}
+		catch (const std::exception& e) {
+			std::cerr << "Error: " << e.what() << std::endl;
+		}
+	}
 }
