@@ -10,6 +10,7 @@ class client
 		std::string _username;
 		std::string	_recv_buffer;
 
+		bool		_isAuthenticated;
 		bool		_isRegistered;
 
 	public:
@@ -23,10 +24,12 @@ class client
 
 		const std::string&	getNickname() const;
 		const std::string&	getUsername() const;
+		bool				isAuthenticated() const;
 		bool				isRegistered() const;
 
 		void				setNickname(const std::string& nick);
 		void				setUsername(const std::string& user);
+		void				setAuthenticated(bool status);
 		void				setRegistered(bool status);
 };
 

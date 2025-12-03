@@ -2,8 +2,7 @@
 
 extern bool isRunning;
 
-server::server( void ) : _port(PORT) {}
-server::server( int port ) : _port(port){}
+server::server( int port, const std::string& password ) : _port(port), _password(password) {}
 server::~server() {
 	for (std::map<int, client*>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
 		delete it->second;

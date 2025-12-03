@@ -14,14 +14,14 @@ class server
 	private:
 		int									_listener_fd;
 		int									_port;
+		std::string							_password;
 		struct sockaddr_in					_address;
 		std::vector<struct pollfd>			_fds;
 		std::map<int, client*>				_clients;
 		std::map<std::string, CommandHandler>	_commands;
 
 	public:
-		server( void );
-		server( int port );
+		server( int port, const std::string& password );
 		~server();
 
 		// main func
@@ -41,6 +41,7 @@ class server
 		void	initCommands( void );
 
 		// command handlers
+		void	handlePass( int fd, message &msg );
 		void	handleCap( int fd, message &msg );
 		void	handleNick( int fd, message &msg );
 		void	handleUser( int fd, message &msg );

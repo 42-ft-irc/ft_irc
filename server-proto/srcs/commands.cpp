@@ -1,6 +1,7 @@
 #include "server.hpp"
 
 void server::initCommands( void ) {
+	_commands["PASS"] = &server::handlePass;
 	_commands["CAP"] = &server::handleCap;
 	_commands["NICK"] = &server::handleNick;
 	_commands["USER"] = &server::handleUser;
@@ -32,6 +33,24 @@ void server::welcomeClient(int fd) {
 	//sendReply(fd, ":server " RPL_ENDOFMOTD " " + nick + " :End of /MOTD command.");
 }
 
+void server::handlePass(int fd, message &msg) {
+	client* c = _clients[fd];
+
+	if (c->isRegistered()) {
+		sendReply(fd, ":server 462 " + c->getNickname() + " :You may not reregister");
+		return;
+	}
+	if (msg.params.empty()) {
+		sendReply(fd, ":server 461 * PASS :Not enough parameters");
+		return;
+	}
+	if (msg.params[0] != _password) {
+		sendReply(fd, ":server " ERR_PASSWDMISMATCH " * :Password incorrect");
+		return;
+	}
+	c->setAuthenticated(true);
+}
+
 void server::handleCap(int fd, message &msg) {
 	if (msg.params.size() > 0 && msg.params[0] == "LS") {
 		sendReply(fd, "CAP * LS :");
@@ -41,6 +60,10 @@ void server::handleCap(int fd, message &msg) {
 void server::handleNick(int fd, message &msg) {
 	client* c = _clients[fd];
 
+	if (!c->isAuthenticated()) {
+		sendReply(fd, ":server " ERR_NOTREGISTERED " * :You have not registered");
+		return;
+	}
 	if (msg.params.empty()) {
 		sendReply(fd, ":server 431 * :No nickname given");
 		return;
@@ -51,7 +74,6 @@ void server::handleNick(int fd, message &msg) {
 	c->setNickname(newNick);
 
 	if (c->isRegistered()) {
-		// Notify the client of the nickname change
 		sendReply(fd, ":" + oldNick + " NICK " + newNick);
 	} else if (!c->getNickname().empty() && !c->getUsername().empty()) {
 		welcomeClient(fd);
@@ -61,6 +83,10 @@ void server::handleNick(int fd, message &msg) {
 void server::handleUser(int fd, message &msg) {
 	client* c = _clients[fd];
 
+	if (!c->isAuthenticated()) {
+		sendReply(fd, ":server " ERR_NOTREGISTERED " * :You have not registered");
+		return;
+	}
 	if (msg.params.size() < 4) {
 		sendReply(fd, ":server 461 * USER :Not enough parameters");
 		return;

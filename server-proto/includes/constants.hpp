@@ -14,4 +14,7 @@
 #define RPL_MOTD		"372"
 #define RPL_ENDOFMOTD	"376"
 
+#define ERR_PASSWDMISMATCH	"464"
+#define ERR_NOTREGISTERED	"451"
+
 #endif
