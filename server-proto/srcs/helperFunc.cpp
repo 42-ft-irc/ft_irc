@@ -8,6 +8,7 @@ void server::initCommands( void ) {
 	_commands["PING"] = &server::handlePing;
 	_commands["QUIT"] = &server::handleQuit;
 	_commands["PRIVMSG"] = &server::handlePrivmsg;
+	_commands["JOIN"] = &server::handleJoin;
 }
 
 void server::sendReply(int fd, const std::string& msg) {
