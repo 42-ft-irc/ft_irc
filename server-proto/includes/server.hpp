@@ -43,8 +43,9 @@ class server
 		void	welcomeClient( int fd );
 		void	initCommands( void );
 		void	sendReply(int fd, const std::string& msg);
+		client* findClientByNick(const std::string& nick);
 
-		// command handlers
+		// server commands
 		void	handlePass( int fd, message &msg );
 		void	handleCap( int fd, message &msg );
 		void	handleNick( int fd, message &msg );
@@ -52,10 +53,7 @@ class server
 		void	handlePing( int fd, message &msg );
 		void	handleQuit( int fd, message &msg );
 		void	handlePrivmsg( int fd, message &msg );
-
-		// helper for finding clients
-		client*	findClientByNick( const std::string& nick );
-
+		// channel commands
 		void	handleJoin( int fd, message &msg );
 
 		class ServerException : public std::runtime_error {
