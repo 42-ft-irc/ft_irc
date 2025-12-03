@@ -9,5 +9,9 @@
 #define RPL_YOURHOST	"002"
 #define RPL_CREATED 	"003"
 #define RPL_MYINFO		"004"
+#define RPL_LUSERME		"255"
+#define RPL_MOTDSTART	"375"
+#define RPL_MOTD		"372"
+#define RPL_ENDOFMOTD	"376"
 
 #endif

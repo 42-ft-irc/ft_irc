@@ -45,6 +45,7 @@ class server
 		void	handleNick( int fd, message &msg );
 		void	handleUser( int fd, message &msg );
 		void	handlePing( int fd, message &msg );
+		void	handleQuit( int fd, message &msg );
 
 		class ServerException : public std::runtime_error {
             public:
