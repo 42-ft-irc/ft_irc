@@ -4,6 +4,7 @@
 #include "message.hpp"
 #include "client.hpp"
 #include "channel.hpp"
+#include "constants.hpp"
 
 class server;
 typedef void (server::*CommandHandler)(int, message&);
@@ -45,16 +46,13 @@ class server
 		void	handleUser( int fd, message &msg );
 		void	handlePing( int fd, message &msg );
 
-		class ServerException : public std::exception {
-			private:
-				const char* _msg;
-			public:
-				ServerException(const char* msg) throw() : _msg(msg) {}
-				virtual ~ServerException() throw() {}
-				virtual const char* what() const throw() {
-					return _msg;
-				}
-		};
+		class ServerException : public std::runtime_error {
+            public:
+                ServerException(const std::string &msg) 
+                    : std::runtime_error(msg + ": " + std::strerror(errno)) {}
+                ServerException(const std::string &msg, bool useErrno) 
+                    : std::runtime_error(useErrno ? (msg + ": " + std::strerror(errno)) : msg) {}
+        };
 };
 
 #endif
