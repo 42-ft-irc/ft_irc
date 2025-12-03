@@ -3,18 +3,18 @@
 server::server( void ) : _port(6667) {}
 server::server( int port ) : _port(port){}
 server::~server() {
-	for (size_t i = 0; i < _fds.size(); i++) {
-		close(_fds[i].fd);
+	for (std::map<int, client*>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
+		delete it->second;
+		close(it->first);
 	}
 	_clients.clear();
+	_fds.clear();
 }
 
 int	server::startServer( void ) {
 	_listener_fd = socket(AF_INET, SOCK_STREAM, 0);
-	if (_listener_fd < 0) {
-		std::cerr << "problem while creating socket" << std::endl;
-		return 1;
-	}
+	if (_listener_fd < 0)
+        throw ServerException("Failed to create socket");
 
 	int opt = 1;
 	setsockopt(_listener_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
