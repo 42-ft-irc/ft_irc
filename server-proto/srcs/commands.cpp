@@ -7,6 +7,7 @@ void server::initCommands( void ) {
 	_commands["USER"] = &server::handleUser;
 	_commands["PING"] = &server::handlePing;
 	_commands["QUIT"] = &server::handleQuit;
+	_commands["PRIVMSG"] = &server::handlePrivmsg;
 }
 
 static void sendReply(int fd, const std::string& msg) {
@@ -71,6 +72,13 @@ void server::handleNick(int fd, message &msg) {
 
 	std::string oldNick = c->getNickname();
 	std::string newNick = msg.params[0];
+
+	client* existing = findClientByNick(newNick);
+	if (existing && existing != c) {
+		sendReply(fd, ":server " ERR_NICKNAMEINUSE " " + (oldNick.empty() ? "*" : oldNick) + " " + newNick + " :Nickname is already in use");
+		return;
+	}
+
 	c->setNickname(newNick);
 
 	if (c->isRegistered()) {
@@ -118,4 +126,42 @@ void server::handleQuit(int fd, message &msg) {
 
 	std::string nick = c->getNickname().empty() ? "*" : c->getNickname();
 	sendReply(fd, "ERROR :Closing Link: " + nick + " (Quit: " + quitMsg + ")");
+}
+
+client* server::findClientByNick(const std::string& nick) {
+	for (std::map<int, client*>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
+		if (it->second->getNickname() == nick)
+			return it->second;
+	}
+	return NULL;
+}
+
+void server::handlePrivmsg(int fd, message &msg) {
+	client* sender = _clients[fd];
+	std::string senderNick = sender->getNickname();
+
+	if (!sender->isRegistered()) {
+		sendReply(fd, ":server " ERR_NOTREGISTERED " * :You have not registered");
+		return;
+	}
+	if (msg.params.empty()) {
+		sendReply(fd, ":server " ERR_NORECIPIENT " " + senderNick + " :No recipient given (PRIVMSG)");
+		return;
+	}
+	if (msg.params.size() < 2 || msg.params[1].empty()) {
+		sendReply(fd, ":server " ERR_NOTEXTTOSEND " " + senderNick + " :No text to send");
+		return;
+	}
+
+	std::string target = msg.params[0];
+	std::string text = msg.params[1];
+
+	client* recipient = findClientByNick(target);
+	if (!recipient) {
+		sendReply(fd, ":server " ERR_NOSUCHNICK " " + senderNick + " " + target + " :No such nick/channel");
+		return;
+	}
+
+	std::string fullMsg = ":" + senderNick + "!" + sender->getUsername() + "@localhost PRIVMSG " + target + " :" + text;
+	sendReply(recipient->getFD(), fullMsg);
 }

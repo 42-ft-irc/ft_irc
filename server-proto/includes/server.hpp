@@ -47,6 +47,10 @@ class server
 		void	handleUser( int fd, message &msg );
 		void	handlePing( int fd, message &msg );
 		void	handleQuit( int fd, message &msg );
+		void	handlePrivmsg( int fd, message &msg );
+
+		// helper for finding clients
+		client*	findClientByNick( const std::string& nick );
 
 		class ServerException : public std::runtime_error {
             public:
