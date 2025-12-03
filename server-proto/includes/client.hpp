@@ -12,8 +12,10 @@ class client
 		bool		_isRegistered;
 
 	public:
-		client(/* args */);
+		client( int fd );
 		~client();
+
+		int	getFD() const ;
 };
 
 #endif

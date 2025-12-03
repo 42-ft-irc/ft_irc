@@ -6,6 +6,7 @@ server::~server() {
 	for (size_t i = 0; i < _fds.size(); i++) {
 		close(_fds[i].fd);
 	}
+	_clients.clear();
 }
 
 int	server::startServer( void ) {
@@ -54,6 +55,7 @@ int	server::runServerLoop( void ) {
 					}
 					fcntl(new_fd, F_SETFL, O_NONBLOCK);
 					addFD(new_fd);
+					_clients[new_fd] = new client(new_fd);
 				}
 				else {
 					char	buffer[1024];
@@ -80,6 +82,10 @@ int	server::runServerLoop( void ) {
 
 int	server::removeClient( int fd, int i ) {
 	std::cout << "client: " << fd << " removed" << std::endl;
+	if (_clients.find(fd) != _clients.end()) {
+		delete _clients[fd];
+		_clients.erase(fd);
+	}
 	close(fd);
 	_fds.erase(_fds.begin() + i);
 	i--;
