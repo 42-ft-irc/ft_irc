@@ -17,7 +17,7 @@ void	server::handleJoin( int fd, message &msg ) {
 	}
 
 	if (_channels.find(channelName) == _channels.end()) {
-		_channels[channelName] = new channel(channelName, msg.params[1]);
+		_channels[channelName] = new channel(channelName, key);
 		_channels[channelName]->addClient(_clients[fd]);
 		_channels[channelName]->addOperator(_clients[fd]);
 	}
