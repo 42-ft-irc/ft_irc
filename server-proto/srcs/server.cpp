@@ -14,27 +14,24 @@ server::~server() {
 int	server::startServer( void ) {
 	_listener_fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (_listener_fd < 0)
-        throw ServerException("Failed to create socket");
+		throw ServerException("Failed to create socket");
 
 	int opt = 1;
-	setsockopt(_listener_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+	if (setsockopt(_listener_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
+		throw ServerException("Failed to set SO_REUSEADDR");
 
-	fcntl(_listener_fd, F_SETFL, O_NONBLOCK);
+	if (fcntl(_listener_fd, F_SETFL, O_NONBLOCK) < 0)
+		throw ServerException("Failed to set O_NONBLOCK");
 
 	setAddress();
 
-	if (bind(_listener_fd, reinterpret_cast<struct sockaddr*>(&_address), sizeof(_address)) < 0) {
-		std::cerr << "problem while binding socket and adress" << std::endl;
-		return 1;
-	}
+	if (bind(_listener_fd, reinterpret_cast<struct sockaddr*>(&_address), sizeof(_address)) < 0)
+		throw ServerException("Failed to bind socket");
 
-	if (listen(_listener_fd, 10) < 0) {
-		std::cerr << "problem while trying to listen to socket" << std::endl;
-		return 1;
-	}
+	if (listen(_listener_fd, 10) < 0)
+		throw ServerException("Failed to listen on socket");
 
 	std::cout << "server is up, listening to port " << _port << std::endl;
-
 	return (0);
 }
 
