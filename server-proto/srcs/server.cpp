@@ -35,13 +35,11 @@ int	server::startServer( void ) {
 
 int	server::runServerLoop( void ) {
 	addFD( _listener_fd );
-
 	while (true) {
 		if (poll(&_fds[0], _fds.size(), -1) < 0) {
 			std::cerr << "problem while running poll" << std::endl;
 			break ;
 		}
-
 		for (size_t i = 0; i < _fds.size(); i++) {
 			if (_fds[i].revents & POLLIN) {
 				if (_fds[i].fd == _listener_fd) {
@@ -51,29 +49,16 @@ int	server::runServerLoop( void ) {
 						continue ;
 					}
 					fcntl(new_fd, F_SETFL, O_NONBLOCK);
-
-					struct pollfd new_pfd;
-					new_pfd.fd = new_fd;
-					new_pfd.events = POLLIN;
-					new_pfd.revents = 0;
-					_fds.push_back(new_pfd);
-
-					std::cout << "new client added" << std::endl;
+					addFD(new_fd);
 				}
 				else {
 					char	buffer[1024];
 					int	bytes = recv(_fds[i].fd, buffer, sizeof(buffer) - 1, 0);
-					if (bytes <= 0) {
-						std::cout << "client: " << _fds[i].fd << "removed" << std::endl;
-						close(_fds[i].fd);
-						_fds.erase(_fds.begin() + i);
-						i--;
-					}
-					else {	
+					if (bytes <= 0)
+						i = removeClient( _fds[i].fd, i );
+					else {
 						buffer[bytes] = '\0';
 						std::string raw_data(buffer);
-						//std::cout << "Client " << _fds[i].fd << ": " << buffer << std::endl;
-
 						try {
 							message msg = parseMessage(raw_data);
 							executeMessage(_fds[i].fd, msg);
@@ -89,6 +74,14 @@ int	server::runServerLoop( void ) {
 	return (0);
 }
 
+int	server::removeClient( int fd, int i ) {
+	std::cout << "client: " << fd << "removed" << std::endl;
+	close(fd);
+	_fds.erase(_fds.begin() + i);
+	i--;
+	return (i);
+}
+
 void	server::setAdress( void ) {
 	_address.sin_family = AF_INET;
 	_address.sin_addr.s_addr = INADDR_ANY;
@@ -101,4 +94,5 @@ void	server::addFD( int new_fd ) {
 	pfd.events = POLLIN;
 	pfd.revents = 0;
 	_fds.push_back(pfd);
+	std::cout << "new client added" << std::endl;
 }
