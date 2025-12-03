@@ -10,7 +10,7 @@ void server::initCommands( void ) {
 	_commands["PRIVMSG"] = &server::handlePrivmsg;
 }
 
-static void sendReply(int fd, const std::string& msg) {
+void server::sendReply(int fd, const std::string& msg) {
 	std::string full = msg + "\r\n";
 	send(fd, full.c_str(), full.size(), 0);
 }
@@ -31,7 +31,7 @@ void server::welcomeClient(int fd) {
 	sendReply(fd, ":server " RPL_LUSERME " " + nick + " :I have " + userCount.str() + " clients and 1 servers");
 	sendReply(fd, ":server " RPL_MOTDSTART " " + nick + " :- server Message of the Day -");
 	sendReply(fd, ":server " RPL_MOTD " " + nick + " :- Welcome to ft_irc!");
-	//sendReply(fd, ":server " RPL_ENDOFMOTD " " + nick + " :End of /MOTD command.");
+	sendReply(fd, ":server " RPL_ENDOFMOTD " " + nick + " :End of /MOTD command.");
 }
 
 client* server::findClientByNick(const std::string& nick) {

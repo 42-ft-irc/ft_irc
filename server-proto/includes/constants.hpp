@@ -3,22 +3,31 @@
 
 # define BUFFER_SIZE 	1024
 # define PORT			6667
-# define TIMEOUT_POLL	1000			
+# define TIMEOUT_POLL	1000	
 
 #define RPL_WELCOME		"001"
 #define RPL_YOURHOST	"002"
 #define RPL_CREATED 	"003"
 #define RPL_MYINFO		"004"
 #define RPL_LUSERME		"255"
+#define RPL_NOTOPIC		"331"
+#define RPL_YESTOPIC	"332"
+#define RPL_LISTNAMES	"353"
+#define RPL_ENDLISTN	"366"
 #define RPL_MOTDSTART	"375"
 #define RPL_MOTD		"372"
 #define RPL_ENDOFMOTD	"376"
 
 #define ERR_NOSUCHNICK		"401"
+#define ERR_NOCHAN			"403"
 #define ERR_NORECIPIENT		"411"
 #define ERR_NOTEXTTOSEND	"412"
 #define ERR_NICKNAMEINUSE	"433"
 #define ERR_NOTREGISTERED	"451"
+#define ERR_NOPARAMS		"461"
 #define ERR_PASSWDMISMATCH	"464"
+#define	ERR_CANTJOINL		"471"
+#define	ERR_CANTJOINI		"473"
+#define ERR_CANTJOINK		"475"
 
 #endif

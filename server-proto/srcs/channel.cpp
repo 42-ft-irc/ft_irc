@@ -1,8 +1,8 @@
 #include "channel.hpp"
 
 channel::channel( std::string name, std::string key ) 
-: _name(name), _topic(""), _key(key), _limit(0), 
-	_inviteOnly(false), _topicRestricted(false) {}
+: _name(name), _topic(""), _key(key), _inviteOnly(false), 
+	_topicRestricted(false), _limit(0) {}
 channel::~channel() {}
 
 std::string channel::getName() const { return _name; }
@@ -17,6 +17,10 @@ std::string channel::getModes() const {
 	if (_limit > 0) modes += "l";
 	return modes;
 }
+size_t	channel::getClientCount() const { return _clients.size(); }
+const std::vector<client*>&	channel::getClients() const { return _clients; }
+
+
 
 void channel::setTopic(std::string topic) { _topic = topic; }
 void channel::setKey(std::string key) { _key = key; }

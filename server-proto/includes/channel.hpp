@@ -26,6 +26,8 @@ class channel
 		std::string	getKey() const;
 		int			getLimit() const;
 		std::string	getModes() const;
+		size_t getClientCount() const ;
+		const std::vector<client*>& getClients() const ;
 
 		void	setTopic(std::string topic);
 		void	setKey(std::string key);
