@@ -65,6 +65,13 @@ int	server::runServerLoop( void ) {
 					else {
 						buffer[bytes] = '\0';
 						std::string raw_data(buffer);
+						std::cout << "Raw: [";
+						for (size_t j = 0; j < raw_data.size(); j++) {
+							if (raw_data[j] == '\r') std::cout << "\\r";
+							else if (raw_data[j] == '\n') std::cout << "\\n";
+							else std::cout << raw_data[j];
+						}
+						std::cout << "]" << std::endl;
 						try {
 							message msg = parseMessage(raw_data);
 							executeMessage(_fds[i].fd, msg);
