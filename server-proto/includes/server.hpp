@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SERVER_HPP
+#define SERVER_HPP
 #include "libraries.hpp"
 #include "message.hpp"
 
@@ -27,3 +28,5 @@ class server
 		void	addFD( int new_fd );
 		int		removeClient( int fd, int i );
 };
+
+#endif

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CHANNEL_HPP
+#define CHANNEL_HPP
 #include "libraries.hpp"
 #include "client.hpp"
 
@@ -12,3 +13,5 @@ class channel
 		std::vector<client*> _clients;
 		// Modes: i, t, k, o, l (Invite-only, Topic-rest, Key, Op, Limit)
 };
+
+#endif

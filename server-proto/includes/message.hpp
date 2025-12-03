@@ -1,4 +1,6 @@
-#pragma once
+#ifndef MESSAGE_HPP
+#define MESSAGE_HPP
+
 #include <string>
 #include <vector>
 #include <iostream>
@@ -18,3 +20,5 @@ inline std::ostream	&operator << (std::ostream& out, const message& msg) {
     }
     return (out);
 }
+
+#endif

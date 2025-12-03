@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CLIENT_HPP
+#define CLIENT_HPP
 #include "libraries.hpp"
 
 class client
@@ -14,3 +15,5 @@ class client
 		client(/* args */);
 		~client();
 };
+
+#endif

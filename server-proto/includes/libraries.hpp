@@ -1,3 +1,6 @@
+#ifndef LIBRARIES_HPP
+#define LIBRARIES_HPP
+
 #include <iostream>
 #include <sys/socket.h>	// socket(), bind(), listen(), accept()
 #include <netinet/in.h>	// sockaddr_in, htons()
@@ -7,3 +10,5 @@
 #include <fcntl.h>
 #include <string>
 #include <sstream>
+
+#endif
