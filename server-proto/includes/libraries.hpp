@@ -15,6 +15,7 @@
 #include <cerrno>
 #include <cstring>
 #include <stdexcept>
+#include <csignal>
 
 
 #endif
