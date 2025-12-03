@@ -9,7 +9,7 @@ struct message {
 	std::vector<std::string> params;
 };
 
-std::ostream	&operator << (std::ostream& out, const message& msg) {
+inline std::ostream	&operator << (std::ostream& out, const message& msg) {
 	out << "Prefix: " << (msg.prefix.empty() ? "(none)" : msg.prefix) << " , ";
     out << "Cmd: " << msg.command << " , ";
     out << "Params: ";
