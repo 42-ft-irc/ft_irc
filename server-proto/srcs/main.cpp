@@ -4,5 +4,10 @@ int	main () {
 	server	irc( 6667 );
 
 	irc.startServer();
-	irc.runServerLoop();
+	try {
+		irc.runServerLoop();
+	}
+	catch (std::exception &e) { 
+		std::cerr << "Error: " << e.what() << std::endl;
+	}
 }

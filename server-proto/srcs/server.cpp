@@ -2,7 +2,11 @@
 
 server::server( void ) : _port(6667) {}
 server::server( int port ) : _port(port){}
-server::~server() {}
+server::~server() {
+	for (size_t i = 0; i < _fds.size(); i++) {
+		close(_fds[i].fd);
+	}
+}
 
 int	server::startServer( void ) {
 	_listener_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -16,9 +20,9 @@ int	server::startServer( void ) {
 
 	fcntl(_listener_fd, F_SETFL, O_NONBLOCK);
 
-	setAdress();
+	setAddress();
 
-	if (bind(_listener_fd, (struct sockaddr *)&_address, sizeof(_address)) < 0) {
+	if (bind(_listener_fd, reinterpret_cast<struct sockaddr*>(&_address), sizeof(_address)) < 0) {
 		std::cerr << "problem while binding socket and adress" << std::endl;
 		return 1;
 	}
@@ -82,7 +86,7 @@ int	server::removeClient( int fd, int i ) {
 	return (i);
 }
 
-void	server::setAdress( void ) {
+void	server::setAddress( void ) {
 	_address.sin_family = AF_INET;
 	_address.sin_addr.s_addr = INADDR_ANY;
 	_address.sin_port = htons(_port);

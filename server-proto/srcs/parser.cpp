@@ -1,6 +1,6 @@
 #include "server.hpp"
 
-message	server::parseMessage( const std::string &raw_data ) {
+message	server::parseMessage( const std::string &raw_data ) const {
 	message				msg;
 	std::stringstream	ss(raw_data);
 	std::string			param;
@@ -20,6 +20,9 @@ message	server::parseMessage( const std::string &raw_data ) {
 			std::string	rest;
 			std::getline(ss, rest);
 			param = param.substr(1) + rest;
+			if (!param.empty() && param[param.size() - 1] == '\r') {
+				param.erase(param.size() - 1);
+			}
 		}
 		msg.params.push_back(param);
 	}
