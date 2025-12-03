@@ -79,7 +79,7 @@ int	server::runServerLoop( void ) {
 }
 
 int	server::removeClient( int fd, int i ) {
-	std::cout << "client: " << fd << "removed" << std::endl;
+	std::cout << "client: " << fd << " removed" << std::endl;
 	close(fd);
 	_fds.erase(_fds.begin() + i);
 	i--;
