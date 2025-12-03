@@ -1,6 +1,6 @@
 #include "server.hpp"
 
-server::server( void ) : _port(6667) {}
+server::server( void ) : _port(PORT) {}
 server::server( int port ) : _port(port){}
 server::~server() {
 	for (std::map<int, client*>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
@@ -55,7 +55,7 @@ int	server::runServerLoop( void ) {
 					_clients[new_fd] = new client(new_fd);
 				}
 				else {
-					char	buffer[1024];
+					char	buffer[BUFFER_SIZE];
 					int	bytes = recv(_fds[i].fd, buffer, sizeof(buffer) - 1, 0);
 					if (bytes <= 0)
 						i = removeClient( _fds[i].fd, i );

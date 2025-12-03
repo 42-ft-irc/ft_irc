@@ -4,6 +4,7 @@
 #include "message.hpp"
 #include "client.hpp"
 #include "channel.hpp"
+#include "constants.hpp"
 
 class server
 {
