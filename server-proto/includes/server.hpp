@@ -12,12 +12,13 @@ typedef void (server::*CommandHandler)(int, message&);
 class server
 {
 	private:
-		int									_listener_fd;
-		int									_port;
-		std::string							_password;
-		struct sockaddr_in					_address;
-		std::vector<struct pollfd>			_fds;
-		std::map<int, client*>				_clients;
+		int										_listener_fd;
+		int										_port;
+		std::string								_password;
+		struct sockaddr_in						_address;
+		std::vector<struct pollfd>				_fds;
+		std::map<int, client*>					_clients;
+		std::map<std::string, channel*>			_channels;
 		std::map<std::string, CommandHandler>	_commands;
 
 	public:
@@ -37,8 +38,11 @@ class server
 		void	addFD( int new_fd );
 		int		removeClient( int fd, int i );
 		void	processClientCommands( int fd );
+
+		// command helpers
 		void	welcomeClient( int fd );
 		void	initCommands( void );
+		void	sendReply(int fd, const std::string& msg);
 
 		// command handlers
 		void	handlePass( int fd, message &msg );
@@ -51,6 +55,8 @@ class server
 
 		// helper for finding clients
 		client*	findClientByNick( const std::string& nick );
+
+		void	handleJoin( int fd, message &msg );
 
 		class ServerException : public std::runtime_error {
             public:

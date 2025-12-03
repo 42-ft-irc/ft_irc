@@ -17,5 +17,7 @@
 #include <stdexcept>
 #include <csignal>
 #include <cstdlib>
+#include <algorithm>
+
 
 #endif
