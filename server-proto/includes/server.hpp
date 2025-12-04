@@ -34,10 +34,11 @@ class server
 		void	executeMessage( int sender_fd, message &msg);
 
 		// helper func
-		void	setAddress( void );
-		void	addFD( int new_fd );
-		int		removeClient( int fd, int i );
-		void	processClientCommands( int fd );
+		void		setAddress( void );
+		void		addFD( int new_fd );
+		int			removeClient( int fd, int i );
+		void		processClientCommands( int fd );
+		channel*	getChannelForMode(int fd, message &msg, client* sender);
 
 		// command helpers
 		void	welcomeClient( int fd );
@@ -56,6 +57,7 @@ class server
 		// channel commands
 		void	handleJoin( int fd, message &msg );
 		void	handleMode( int fd, message &msg );
+		void	handlePart(int fd, message &msg);
 
 		class ServerException : public std::runtime_error {
 			public:

@@ -62,5 +62,137 @@ void	server::handleJoin( int fd, message &msg ) {
 }
 
 void	server::handleMode(int fd, message &msg) {
+	client* c = _clients[fd];
+	channel* chan = getChannelForMode(fd, msg, c);
+	if (!chan) return ;
+	std::string target = msg.params[0];
+
+	// Mode for only reading, reply: modes + values from modes
+	if (msg.params.size() == 1) {
+		std::string modeString = chan->getModes();
+		std::string args = "";
+		if (!chan->getKey().empty()) 
+			args += " " + chan->getKey();
+		if (chan->getLimit() > 0) {
+			std::stringstream ss;
+			ss << chan->getLimit();
+			args += " " + ss.str();
+		}
+		sendReply(fd, ":server " RPL_CHANMODEIS " " + c->getNickname() + " " + target + " " + modeString + args);
+		return;
+	}
+
+	// Mode for changing Modes, only possible for admins
+	if (!chan->isOperator(c)) {
+		sendReply(fd, ":server " ERR_COPRIVSNEEDED " " + c->getNickname() + " " + target + " :You're not channel operator");
+		return;
+	}
+
+	std::string modeStr = msg.params[1];
+	std::string changes = ""; // String, um erfolgreiche Änderungen zu speichern (für Broadcast)
+	std::string argsOut = "";
 	
+	bool adding = true;
+	size_t argIndex = 2;
+
+	for (size_t i = 0; i < modeStr.length(); ++i) {
+		char mode = modeStr[i];
+		if (mode == '+') {
+			adding = true;
+			changes += "+";
+		} else if (mode == '-') {
+			adding = false;
+			changes += "-";
+		} else {
+			switch (mode) {
+				case 'i':
+					chan->setInviteOnly(adding);
+					changes += "i";
+					break;
+				case 't':
+					chan->setTopicRestricted(adding);
+					changes += "t";
+					break;
+				case 'k':
+					if (adding) {
+						if (argIndex < msg.params.size()) {
+							std::string key = msg.params[argIndex++];
+							chan->setKey(key);
+							changes += "k";
+							argsOut += " " + key;
+						}
+					} else {
+						chan->setKey("");
+						changes += "k";
+					}
+					break;
+				case 'l':
+					if (adding) {
+						if (argIndex < msg.params.size()) {
+							int limit = atoi(msg.params[argIndex++].c_str());
+							chan->setLimit(limit);
+							changes += "l";
+							std::stringstream ss; ss << limit;
+							argsOut += " " + ss.str();
+						}
+					} else {
+						chan->setLimit(0);
+						changes += "l";
+					}
+					break;
+				case 'o':
+					if (argIndex < msg.params.size()) {
+						std::string targetNick = msg.params[argIndex++];
+						client* targetClient = findClientByNick(targetNick);
+						
+						if (targetClient && chan->isMember(targetClient)) {
+							if (adding) chan->addOperator(targetClient);
+							else chan->removeOperator(targetClient);
+							
+							changes += "o";
+							argsOut += " " + targetNick;
+						} else {
+							sendReply(fd, ":server " ERR_NOSUCHNICK " " + c->getNickname() + " " + targetNick + " :No such nick/channel");
+						}
+					}
+					break;
+				default:
+					sendReply(fd, ":server " ERR_UNKNOWNMODE " " + c->getNickname() + " " + std::string(1, mode) + " :is unknown mode char to me");
+					break;
+			}
+		}
+	}
+
+	// broadcast changes
+	if (!changes.empty() && changes != "+" && changes != "-") {
+		std::string finalMsg = ":" + c->getNickname() + "!" + c->getUsername() + "@localhost MODE " + target + " " + changes + argsOut;
+		chan->broadcast(finalMsg, NULL);
+	}
+}
+
+void	server::handlePart(int fd, message &msg) {
+	client* c = _clients[fd];
+	if (msg.params.empty()) {
+		sendReply(fd, ":server " ERR_NOPARAMS " " + c->getNickname() + " PART :Not enough parameters");
+		return;
+	}
+	std::string channelName = msg.params[0];
+	std::string reason = (msg.params.size() > 1) ? msg.params[1] : "Leaving";
+	if (_channels.find(channelName) == _channels.end()) {
+		sendReply(fd, ":server " ERR_NOCHAN " " + c->getNickname() + " " + channelName + " :No such channel");
+		return;
+	}
+	channel* chan = _channels[channelName];
+	if (!chan->isMember(c)) {
+		sendReply(fd, ":server " ERR_USERNOTINCHAN " " + c->getNickname() + " " + channelName + " :You're not on that channel");
+		return;
+	}
+	std::string partMsg = ":" + c->getNickname() + "!" + c->getUsername() + "@localhost PART " + channelName + " :" + reason;
+	chan->broadcast(partMsg, NULL);
+	chan->removeClient(c);
+	if (chan->getClientCount() == 0) {
+		_channels.erase(channelName);
+		delete chan;
+		std::cout << "Channel " << channelName << " deleted (empty)." << std::endl;
+	}
 }

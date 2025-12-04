@@ -33,7 +33,7 @@
 #define ERR_PASSWDMISMATCH	"464"
 #define ERR_KEYSET			"467"
 #define	ERR_CANTJOINL		"471"
-#define ERR_UnknownMode		"472"
+#define ERR_UNKNOWNMODE		"472"
 #define	ERR_CANTJOINI		"473"
 #define ERR_CANTJOINK		"475"
 #define ERR_COPRIVSNEEDED	"482"

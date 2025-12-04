@@ -10,6 +10,7 @@ void server::initCommands( void ) {
 	_commands["PRIVMSG"] = &server::handlePrivmsg;
 	_commands["JOIN"] = &server::handleJoin;
 	_commands["MODE"] = &server::handleMode;
+	_commands["PART"] = &server::handlePart;
 }
 
 void server::sendReply(int fd, const std::string& msg) {
@@ -42,4 +43,21 @@ client* server::findClientByNick(const std::string& nick) {
 			return it->second;
 	}
 	return NULL;
+}
+
+channel* server::getChannelForMode(int fd, message &msg, client* sender) {
+	if (msg.params.empty()) {
+		sendReply(fd, ":server " ERR_NOPARAMS " " + sender->getNickname() + " MODE :Not enough parameters");
+		return NULL;
+	}
+	std::string target = msg.params[0];
+	if (target[0] != '#' && target[0] != '&') {
+		sendReply(fd, ":server " ERR_NOSUCHNICK " " + sender->getNickname() + " " + target + " :No such nick/channel");
+		return NULL;
+	}
+	if (_channels.find(target) == _channels.end()) {
+		sendReply(fd, ":server " ERR_NOCHAN " " + sender->getNickname() + " " + target + " :No such channel");
+		return NULL;
+	}
+	return _channels[target];
 }

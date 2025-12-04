@@ -119,7 +119,8 @@ void	server::addFD( int new_fd ) {
 	pfd.events = POLLIN;
 	pfd.revents = 0;
 	_fds.push_back(pfd);
-	std::cout << "new client added" << std::endl;
+	if (new_fd != _listener_fd)
+		std::cout << "new client added" << std::endl;
 }
 
 void	server::processClientCommands( int fd ) {
