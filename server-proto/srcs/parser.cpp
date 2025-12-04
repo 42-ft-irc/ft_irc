@@ -6,13 +6,15 @@ message	server::parseMessage( const std::string &raw_data ) const {
 	std::string			param;
 
 	ss >> param;
+	if (param.empty()) return msg;
+
 	if ( param[0] == ':' ) {
 		msg.prefix = param.substr(1);
 		ss >> msg.command;
-	}
-	else {
+	} else {
 		msg.command = param;
 	}
+
 	while (ss >> param) {
 		if (param.empty())
 			break;

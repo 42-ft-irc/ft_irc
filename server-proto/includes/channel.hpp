@@ -6,28 +6,32 @@
 class channel
 {
 	private:
-		std::string _name;
-		std::string _topic;
-		std::string _key;
+		std::string				_name;
+		std::string				_topic;
+		std::string				_key;
 
-		bool	_inviteOnly;
-		bool	_topicRestricted;
-		int		_limit;
+		bool					_inviteOnly;
+		bool					_topicRestricted;
+		int						_limit;
 
-		std::vector<client*> _operators;
-		std::vector<client*> _clients;
+		std::vector<client*>	_operators;
+		std::vector<client*>	_clients;
 	
+		channel();
+		channel(const channel &src);
+		channel &operator=(const channel &src);
+
 	public:
 		channel( std::string name, std::string key );
 		~channel();
 
-		std::string	getName() const;
-		std::string	getTopic() const;
-		std::string	getKey() const;
-		int			getLimit() const;
-		std::string	getModes() const;
-		size_t getClientCount() const ;
-		const std::vector<client*>& getClients() const ;
+		std::string					getName() const;
+		std::string					getTopic() const;
+		std::string					getKey() const;
+		int							getLimit() const;
+		std::string					getModes() const;
+		size_t						getClientCount() const ;
+		const std::vector<client*>&	getClients() const ;
 
 		void	setTopic(std::string topic);
 		void	setKey(std::string key);
@@ -37,11 +41,13 @@ class channel
 
 		void	addClient(client* new_client);
 		void	removeClient(client* client_to_remove);
+
 		void	addOperator(client* new_op);
 		void	removeOperator(client* op_to_remove);
 
 		bool	isMember(client* c);
 		bool	isOperator(client* c);
+		bool	isEmpty() const;
 
 		void	broadcast(std::string message, client* sender);
 };
