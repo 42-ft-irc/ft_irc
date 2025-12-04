@@ -10,6 +10,7 @@
 #define RPL_CREATED 	"003"
 #define RPL_MYINFO		"004"
 #define RPL_LUSERME		"255"
+#define RPL_ENDOFWHO	"315"
 #define RPL_CHANMODEIS	"324"
 #define RPL_NOTOPIC		"331"
 #define RPL_YESTOPIC	"332"

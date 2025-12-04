@@ -11,6 +11,7 @@ void server::initCommands( void ) {
 	_commands["JOIN"] = &server::handleJoin;
 	_commands["MODE"] = &server::handleMode;
 	_commands["PART"] = &server::handlePart;
+	_commands["WHO"] = &server::handleWho;
 }
 
 void server::sendReply(int fd, const std::string& msg) {

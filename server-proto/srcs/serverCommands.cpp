@@ -150,3 +150,11 @@ void server::handlePrivmsg(int fd, message &msg) {
 	std::string fullMsg = ":" + senderNick + "!" + sender->getUsername() + "@localhost PRIVMSG " + target + " :" + text;
 	sendReply(recipient->getFD(), fullMsg);
 }
+
+void	server::handleWho(int fd, message &msg) {
+    std::string target = "";
+    if (!msg.params.empty())
+        target = msg.params[0];
+
+    sendReply(fd, ":server " RPL_ENDOFWHO " " + _clients[fd]->getNickname() + " " + target + " :End of /WHO list");
+}
