@@ -62,5 +62,5 @@ void	server::handleJoin( int fd, message &msg ) {
 }
 
 void	server::handleMode(int fd, message &msg) {
-
+	
 }
