@@ -54,6 +54,18 @@ bool channel::isOperator(client* c) {
 	return (it != _operators.end());
 }
 bool channel::isTopicRestricted() const { return _topicRestricted; }
+bool channel::isInvited(client* c) {
+	std::vector<client*>::iterator it = std::find(_invited.begin(), _invited.end(), c);
+	return (it != _invited.end());
+}
+
+void channel::addInvite(client* c) { _invited.push_back(c); }
+void channel::removeInvite(client* c) {
+	std::vector<client*>::iterator it = std::find(_invited.begin(), _invited.end(), c);
+	if (it != _invited.end()) {
+		_invited.erase(it);
+	}
+}
 
 void channel::broadcast(std::string message, client* sender) {
 	std::string fullMsg = message + "\r\n"; 

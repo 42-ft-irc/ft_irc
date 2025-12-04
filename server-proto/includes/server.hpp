@@ -61,6 +61,7 @@ class server
 		void	handlePart(int fd, message &msg);
 		void	handleTopic(int fd, message &msg);
 		void	handleKick(int fd, message &msg);
+		void	handleInvite(int fd, message &msg);
 
 		class ServerException : public std::runtime_error {
 			public:

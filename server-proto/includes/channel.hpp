@@ -16,6 +16,7 @@ class channel
 
 		std::vector<client*> _operators;
 		std::vector<client*> _clients;
+		std::vector<client*> _invited;
 	
 	public:
 		channel( std::string name, std::string key );
@@ -43,6 +44,10 @@ class channel
 		bool	isMember(client* c);
 		bool	isOperator(client* c);
 		bool	isTopicRestricted() const;
+		bool	isInvited(client* c);
+
+		void	addInvite(client* c);
+		void	removeInvite(client* c);
 
 		void	broadcast(std::string message, client* sender);
 };
