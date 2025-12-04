@@ -89,9 +89,9 @@ void server::handleUser(int fd, message &msg) {
 }
 
 void server::handlePing(int fd, message &msg) {
-	std::string response = "PONG :";
+	std::string response = ":server PONG server";
 	if (!msg.params.empty())
-		response += msg.params[0];
+		response += " :" + msg.params[0];
 	sendReply(fd, response);
 }
 
