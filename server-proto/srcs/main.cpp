@@ -1,11 +1,11 @@
 #include "server.hpp"
 
-bool isRunning = true;
+bool g_server_running = true;
 
 void signalHandler(int signum) {
 	(void)signum;
 	std::cout << "\nSignal received, shutting down..." << std::endl;
-	isRunning = false;
+	g_server_running = false;
 }
 
 int	main (int argc, char **argv) {
@@ -27,10 +27,10 @@ int	main (int argc, char **argv) {
 	}
 
 	signal(SIGINT, signalHandler);
+
 	try {
 		server	irc(port, password);
-		irc.startServer();
-		irc.runServerLoop();
+		irc.run();
 	}
 	catch (std::exception &e) {
 		std::cerr << "Error: " << e.what() << std::endl;

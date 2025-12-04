@@ -17,6 +17,19 @@ void server::initCommands( void ) {
 	_commands["INVITE"] = &server::handleInvite;
 }
 
+void server::executeCommand(int fd, message &msg) {
+	std::map<std::string, CommandHandler>::iterator it = _commands.find(msg.command);
+
+	if (it != _commands.end()) {
+		(this->*(it->second))(fd, msg);
+	} else {
+		if (!msg.command.empty()) {
+			std::string err = ":server 421 " + msg.command + " :Unknown command";
+			sendReply(fd, err);
+		}
+	}
+}
+
 void server::sendReply(int fd, const std::string& msg) {
 	std::string full = msg + "\r\n";
 	send(fd, full.c_str(), full.size(), 0);

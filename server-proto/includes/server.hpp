@@ -12,39 +12,49 @@ typedef void (server::*CommandHandler)(int, message&);
 class server
 {
 	private:
-		int										_listener_fd;
 		int										_port;
 		std::string								_password;
-		struct sockaddr_in						_address;
-		std::vector<struct pollfd>				_fds;
+		int										_listenerFd;
+
+		std::vector<struct pollfd>				_pollFds;
 		std::map<int, client*>					_clients;
 		std::map<std::string, channel*>			_channels;
 		std::map<std::string, CommandHandler>	_commands;
+
+		server();
+		server(const server &src);
+		server &operator=(const server &src);
+
+		void		createSocket();
+		void		bindAndListen();
+		void		acceptNewClient();
+		void		handleClientData(int fd);
+		void		removeFromPoll(int fd);
 
 	public:
 		server( int port, const std::string& password );
 		~server();
 
-		// main func
-		int		startServer( void );
-		int		runServerLoop( void );
+		// core
+		void		initCommands();
+		void		run();
 
-		// message func
-		message	parseMessage( const std::string &raw_data ) const;
-		void	executeMessage( int sender_fd, message &msg);
+		// client/channel managing
+		void		removeClient(int fd);
+		client* 	findClientByNick(const std::string& nick);
+		channel*	getChannel(const std::string& name);
+		channel*	createChannel(const std::string& name, const std::string& key, client* creator);
+		void		removeChannel(const std::string& name);
 
-		// helper func
-		void		setAddress( void );
-		void		addFD( int new_fd );
-		int			removeClient( int fd, int i );
+		// cmd exec
+		message	parseMessage(const std::string &raw_data) const;
+		void	executeCommand(int fd, message &msg);
+
+		// utils
+		void		setAddress(void);
+		void		addFD(int new_fd);
 		void		processClientCommands( int fd );
 		channel*	getChannelForMode(int fd, message &msg, client* sender);
-
-		// command helpers
-		void	welcomeClient( int fd );
-		void	initCommands( void );
-		void	sendReply(int fd, const std::string& msg);
-		client* findClientByNick(const std::string& nick);
 
 		// server commands
 		void	handlePass( int fd, message &msg );
@@ -63,6 +73,11 @@ class server
 		void	handleKick(int fd, message &msg);
 		void	handleInvite(int fd, message &msg);
 
+		// command util
+		void	welcomeClient( int fd );
+		void	sendReply(int fd, const std::string& msg);
+
+		// exception class
 		class ServerException : public std::runtime_error {
 			public:
 				ServerException(const std::string &msg) 
