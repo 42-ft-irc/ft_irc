@@ -55,14 +55,15 @@ class server
 		void	handlePrivmsg( int fd, message &msg );
 		// channel commands
 		void	handleJoin( int fd, message &msg );
+		void	handleMode( int fd, message &msg );
 
 		class ServerException : public std::runtime_error {
-            public:
-                ServerException(const std::string &msg) 
-                    : std::runtime_error(msg + ": " + std::strerror(errno)) {}
-                ServerException(const std::string &msg, bool useErrno) 
-                    : std::runtime_error(useErrno ? (msg + ": " + std::strerror(errno)) : msg) {}
-        };
+			public:
+				ServerException(const std::string &msg) 
+					: std::runtime_error(msg + ": " + std::strerror(errno)) {}
+				ServerException(const std::string &msg, bool useErrno) 
+					: std::runtime_error(useErrno ? (msg + ": " + std::strerror(errno)) : msg) {}
+		};
 };
 
 #endif

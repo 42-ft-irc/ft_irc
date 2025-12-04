@@ -92,6 +92,12 @@ void	server::executeMessage( int sender_fd, message &msg) {
 int	server::removeClient( int fd, int i ) {
 	std::cout << "client: " << fd << " removed" << std::endl;
 	if (_clients.find(fd) != _clients.end()) {
+		for (std::map<std::string, channel*>::iterator it = _channels.begin(); it != _channels.end(); ++it) {
+            channel* chan = it->second;
+            if (chan->isMember(_clients[fd])) {
+                chan->removeClient(_clients[fd]);
+            }
+        }
 		delete _clients[fd];
 		_clients.erase(fd);
 	}

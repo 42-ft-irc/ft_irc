@@ -9,6 +9,7 @@ void server::initCommands( void ) {
 	_commands["QUIT"] = &server::handleQuit;
 	_commands["PRIVMSG"] = &server::handlePrivmsg;
 	_commands["JOIN"] = &server::handleJoin;
+	_commands["MODE"] = &server::handleMode;
 }
 
 void server::sendReply(int fd, const std::string& msg) {

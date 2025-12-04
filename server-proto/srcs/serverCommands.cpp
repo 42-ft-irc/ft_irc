@@ -4,11 +4,11 @@ void server::handlePass(int fd, message &msg) {
 	client* c = _clients[fd];
 
 	if (c->isRegistered()) {
-		sendReply(fd, ":server 462 " + c->getNickname() + " :You may not reregister");
+		sendReply(fd, ":server " ERR_NOREGISTER " " + c->getNickname() + " :You may not reregister");
 		return;
 	}
 	if (msg.params.empty()) {
-		sendReply(fd, ":server 461 * PASS :Not enough parameters");
+		sendReply(fd, ":server " ERR_NOPARAMS " * PASS :Not enough parameters");
 		return;
 	}
 	if (msg.params[0] != _password) {
@@ -32,7 +32,7 @@ void server::handleNick(int fd, message &msg) {
 		return;
 	}
 	if (msg.params.empty()) {
-		sendReply(fd, ":server 431 * :No nickname given");
+		sendReply(fd, ":server " ERR_NONICKGIVEN " * :No nickname given");
 		return;
 	}
 
@@ -46,6 +46,17 @@ void server::handleNick(int fd, message &msg) {
 	}
 
 	c->setNickname(newNick);
+
+	if (c->isRegistered()) {
+		std::string nickMsg = ":" + oldNick + "!" + c->getUsername() + "@localhost NICK :" + newNick;
+		sendReply(fd, nickMsg);
+
+		for (std::map<std::string, channel*>::iterator it = _channels.begin(); it != _channels.end(); ++it) {
+			if (it->second->isMember(c)) {
+				it->second->broadcast(nickMsg, c);
+			}
+		}
+	}
 
 	if (c->isRegistered()) {
 		sendReply(fd, ":" + oldNick + " NICK " + newNick);
@@ -62,11 +73,11 @@ void server::handleUser(int fd, message &msg) {
 		return;
 	}
 	if (msg.params.size() < 4) {
-		sendReply(fd, ":server 461 * USER :Not enough parameters");
+		sendReply(fd, ":server " ERR_NOPARAMS " * USER :Not enough parameters");
 		return;
 	}
 	if (c->isRegistered()) {
-		sendReply(fd, ":server 462 " + c->getNickname() + " :You may not reregister");
+		sendReply(fd, ":server " ERR_NOREGISTER " " + c->getNickname() + " :You may not reregister");
 		return;
 	}
 	c->setUsername(msg.params[0]);
@@ -122,7 +133,7 @@ void server::handlePrivmsg(int fd, message &msg) {
 				std::string fullMsg = ":" + senderNick + "!" + sender->getUsername() + "@localhost PRIVMSG " + target + " :" + text;
 				chan->broadcast(fullMsg, sender); // Sender ausschließen
 			} else {
-				sendReply(fd, ":server 404 " + senderNick + " " + target + " :Cannot send to channel");
+				sendReply(fd, ":server " ERR_CANTSENDCHAN " " + senderNick + " " + target + " :Cannot send to channel");
 			}
 		} else {
 			sendReply(fd, ":server " ERR_NOSUCHNICK " " + senderNick + " " + target + " :No such channel");

@@ -61,3 +61,6 @@ void	server::handleJoin( int fd, message &msg ) {
 	sendReply(fd, ":server " RPL_ENDLISTN " " + user->getNickname() + " " + channelName + " :End of /NAMES list");
 }
 
+void	server::handleMode(int fd, message &msg) {
+
+}
