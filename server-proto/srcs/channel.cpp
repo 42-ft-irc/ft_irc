@@ -47,6 +47,19 @@ void channel::removeOperator(client* admin_to_remove) {
 bool channel::isMember(client* c) { return (std::find(_clients.begin(), _clients.end(), c) != _clients.end()); }
 bool channel::isOperator(client* c) { return (std::find(_operators.begin(), _operators.end(), c) != _operators.end()); }
 bool channel::isEmpty() const { return _clients.empty(); }
+bool channel::isTopicRestricted() const { return _topicRestricted; }
+bool channel::isInvited(client* c) {
+	std::vector<client*>::iterator it = std::find(_invited.begin(), _invited.end(), c);
+	return (it != _invited.end());
+}
+
+void channel::addInvite(client* c) { _invited.push_back(c); }
+void channel::removeInvite(client* c) {
+	std::vector<client*>::iterator it = std::find(_invited.begin(), _invited.end(), c);
+	if (it != _invited.end()) {
+		_invited.erase(it);
+	}
+}
 
 void channel::broadcast(std::string message, client* sender) {
 	std::string fullMsg = message + "\r\n"; 

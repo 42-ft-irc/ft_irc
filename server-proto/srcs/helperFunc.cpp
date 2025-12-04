@@ -12,6 +12,9 @@ void server::initCommands( void ) {
 	_commands["MODE"] = &server::handleMode;
 	_commands["PART"] = &server::handlePart;
 	_commands["WHO"] = &server::handleWho;
+	_commands["TOPIC"] = &server::handleTopic;
+	_commands["KICK"] = &server::handleKick;
+	_commands["INVITE"] = &server::handleInvite;
 }
 
 void server::executeCommand(int fd, message &msg) {

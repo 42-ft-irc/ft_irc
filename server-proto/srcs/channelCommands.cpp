@@ -33,10 +33,11 @@ void	server::handleJoin( int fd, message &msg ) {
 			sendReply(fd, ":server " ERR_CANTJOINL " " + user->getNickname() + " " + channelName + " :Cannot join channel (+l)");
 			return;
 		}
-		if (chan->getModes().find('i') != std::string::npos) {
+		if (chan->getModes().find('i') != std::string::npos && !chan->isInvited(user)) {
 			sendReply(fd, ":server " ERR_CANTJOINI " " + user->getNickname() + " " + channelName + " :Cannot join channel (+i)");
 			return;
 		}
+		chan->removeInvite(user);
 		chan->addClient(user);
 	}
 	std::string joinMsg = ":" + user->getNickname() + "!" + user->getUsername() + "@localhost JOIN :" + channelName;
@@ -195,4 +196,169 @@ void	server::handlePart(int fd, message &msg) {
 		delete chan;
 		std::cout << "Channel " << channelName << " deleted (empty)." << std::endl;
 	}
+}
+
+void	server::handleTopic(int fd, message &msg) {
+	client* c = _clients[fd];
+
+	// Check if channel name is provided
+	if (msg.params.empty()) {
+		sendReply(fd, ":server " ERR_NOPARAMS " " + c->getNickname() + " TOPIC :Not enough parameters");
+		return;
+	}
+
+	std::string channelName = msg.params[0];
+
+	// Check if channel exists
+	if (_channels.find(channelName) == _channels.end()) {
+		sendReply(fd, ":server " ERR_NOCHAN " " + c->getNickname() + " " + channelName + " :No such channel");
+		return;
+	}
+
+	channel* chan = _channels[channelName];
+
+	// Check if user is on the channel
+	if (!chan->isMember(c)) {
+		sendReply(fd, ":server " ERR_USERNOTINCHAN " " + c->getNickname() + " " + channelName + " :You're not on that channel");
+		return;
+	}
+
+	// Query mode: no topic parameter, just return current topic
+	if (msg.params.size() == 1) {
+		if (chan->getTopic().empty()) {
+			sendReply(fd, ":server " RPL_NOTOPIC " " + c->getNickname() + " " + channelName + " :No topic is set");
+		} else {
+			sendReply(fd, ":server " RPL_YESTOPIC " " + c->getNickname() + " " + channelName + " :" + chan->getTopic());
+		}
+		return;
+	}
+
+	// Set mode: topic parameter provided
+	// Check permissions: if +t mode is set, only operators can change topic
+	if (chan->isTopicRestricted() && !chan->isOperator(c)) {
+		sendReply(fd, ":server " ERR_COPRIVSNEEDED " " + c->getNickname() + " " + channelName + " :You're not channel operator");
+		return;
+	}
+
+	// Set the new topic (can be empty to clear it)
+	std::string newTopic = msg.params[1];
+	chan->setTopic(newTopic);
+
+	// Broadcast the topic change to all channel members
+	std::string topicMsg = ":" + c->getNickname() + "!" + c->getUsername() + "@localhost TOPIC " + channelName + " :" + newTopic;
+	chan->broadcast(topicMsg, NULL);
+}
+
+void	server::handleKick(int fd, message &msg) {
+	client* c = _clients[fd];
+
+	// Check for minimum parameters: channel and user
+	if (msg.params.size() < 2) {
+		sendReply(fd, ":server " ERR_NOPARAMS " " + c->getNickname() + " KICK :Not enough parameters");
+		return;
+	}
+
+	std::string channelName = msg.params[0];
+	std::string targetNick = msg.params[1];
+	std::string reason = (msg.params.size() > 2) ? msg.params[2] : c->getNickname();
+
+	// Check if channel exists
+	if (_channels.find(channelName) == _channels.end()) {
+		sendReply(fd, ":server " ERR_NOCHAN " " + c->getNickname() + " " + channelName + " :No such channel");
+		return;
+	}
+
+	channel* chan = _channels[channelName];
+
+	// Check if kicker is on the channel
+	if (!chan->isMember(c)) {
+		sendReply(fd, ":server " ERR_NOTONCHANNEL " " + c->getNickname() + " " + channelName + " :You're not on that channel");
+		return;
+	}
+
+	// Check if kicker is a channel operator
+	if (!chan->isOperator(c)) {
+		sendReply(fd, ":server " ERR_COPRIVSNEEDED " " + c->getNickname() + " " + channelName + " :You're not channel operator");
+		return;
+	}
+
+	// Find the target user
+	client* target = findClientByNick(targetNick);
+	if (!target) {
+		sendReply(fd, ":server " ERR_NOSUCHNICK " " + c->getNickname() + " " + targetNick + " :No such nick/channel");
+		return;
+	}
+
+	// Check if target is on the channel
+	if (!chan->isMember(target)) {
+		sendReply(fd, ":server " ERR_USERNOTINCHAN " " + c->getNickname() + " " + targetNick + " " + channelName + " :They aren't on that channel");
+		return;
+	}
+
+	// Broadcast the KICK message to all channel members (including the target)
+	std::string kickMsg = ":" + c->getNickname() + "!" + c->getUsername() + "@localhost KICK " + channelName + " " + targetNick + " :" + reason;
+	chan->broadcast(kickMsg, NULL);
+
+	// Remove the target from the channel
+	chan->removeClient(target);
+
+	// Delete channel if empty
+	if (chan->getClientCount() == 0) {
+		_channels.erase(channelName);
+		delete chan;
+		std::cout << "Channel " << channelName << " deleted (empty)." << std::endl;
+	}
+}
+
+void	server::handleInvite(int fd, message &msg) {
+	client* c = _clients[fd];
+
+	// Check for required parameters: nickname and channel
+	if (msg.params.size() < 2) {
+		sendReply(fd, ":server " ERR_NOPARAMS " " + c->getNickname() + " INVITE :Not enough parameters");
+		return;
+	}
+
+	std::string targetNick = msg.params[0];
+	std::string channelName = msg.params[1];
+
+	// Find the target user
+	client* target = findClientByNick(targetNick);
+	if (!target) {
+		sendReply(fd, ":server " ERR_NOSUCHNICK " " + c->getNickname() + " " + targetNick + " :No such nick/channel");
+		return;
+	}
+
+	// Check if channel exists - if it does, inviter must be a member
+	if (_channels.find(channelName) != _channels.end()) {
+		channel* chan = _channels[channelName];
+
+		// Check if inviter is on the channel
+		if (!chan->isMember(c)) {
+			sendReply(fd, ":server " ERR_NOTONCHANNEL " " + c->getNickname() + " " + channelName + " :You're not on that channel");
+			return;
+		}
+
+		// Check if target is already on the channel
+		if (chan->isMember(target)) {
+			sendReply(fd, ":server " ERR_USERONCHANNEL " " + c->getNickname() + " " + targetNick + " " + channelName + " :is already on channel");
+			return;
+		}
+
+		// If channel is invite-only, only operators can invite
+		if (chan->getModes().find('i') != std::string::npos && !chan->isOperator(c)) {
+			sendReply(fd, ":server " ERR_COPRIVSNEEDED " " + c->getNickname() + " " + channelName + " :You're not channel operator");
+			return;
+		}
+
+		// Add target to invite list
+		chan->addInvite(target);
+	}
+
+	// Send RPL_INVITING to the inviter
+	sendReply(fd, ":server " RPL_INVITING " " + c->getNickname() + " " + targetNick + " " + channelName);
+
+	// Send INVITE message to the target
+	std::string inviteMsg = ":" + c->getNickname() + "!" + c->getUsername() + "@localhost INVITE " + targetNick + " :" + channelName;
+	sendReply(target->getFD(), inviteMsg);
 }

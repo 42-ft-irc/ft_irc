@@ -69,6 +69,9 @@ class server
 		void	handleJoin( int fd, message &msg );
 		void	handleMode( int fd, message &msg );
 		void	handlePart(int fd, message &msg);
+		void	handleTopic(int fd, message &msg);
+		void	handleKick(int fd, message &msg);
+		void	handleInvite(int fd, message &msg);
 
 		// command util
 		void	welcomeClient( int fd );

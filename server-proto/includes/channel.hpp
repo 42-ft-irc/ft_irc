@@ -14,8 +14,9 @@ class channel
 		bool					_topicRestricted;
 		int						_limit;
 
-		std::vector<client*>	_operators;
-		std::vector<client*>	_clients;
+		std::vector<client*> _operators;
+		std::vector<client*> _clients;
+		std::vector<client*> _invited;
 	
 		channel();
 		channel(const channel &src);
@@ -48,6 +49,11 @@ class channel
 		bool	isMember(client* c);
 		bool	isOperator(client* c);
 		bool	isEmpty() const;
+		bool	isTopicRestricted() const;
+		bool	isInvited(client* c);
+
+		void	addInvite(client* c);
+		void	removeInvite(client* c);
 
 		void	broadcast(std::string message, client* sender);
 };
