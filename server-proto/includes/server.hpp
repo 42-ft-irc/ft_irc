@@ -59,6 +59,7 @@ class server
 		void	handleJoin( int fd, message &msg );
 		void	handleMode( int fd, message &msg );
 		void	handlePart(int fd, message &msg);
+		void	handleTopic(int fd, message &msg);
 
 		class ServerException : public std::runtime_error {
 			public:

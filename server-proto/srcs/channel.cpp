@@ -53,6 +53,7 @@ bool channel::isOperator(client* c) {
 	std::vector<client*>::iterator it = std::find(_operators.begin(), _operators.end(), c);
 	return (it != _operators.end());
 }
+bool channel::isTopicRestricted() const { return _topicRestricted; }
 
 void channel::broadcast(std::string message, client* sender) {
 	std::string fullMsg = message + "\r\n"; 

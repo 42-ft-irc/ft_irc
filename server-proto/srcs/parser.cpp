@@ -26,6 +26,6 @@ message	server::parseMessage( const std::string &raw_data ) const {
 		}
 		msg.params.push_back(param);
 	}
-	// std::cout << msg << std::endl;
+	std::cout << msg << std::endl;
 	return (msg);
 }

@@ -42,6 +42,7 @@ class channel
 
 		bool	isMember(client* c);
 		bool	isOperator(client* c);
+		bool	isTopicRestricted() const;
 
 		void	broadcast(std::string message, client* sender);
 };

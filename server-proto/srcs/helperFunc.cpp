@@ -12,6 +12,7 @@ void server::initCommands( void ) {
 	_commands["MODE"] = &server::handleMode;
 	_commands["PART"] = &server::handlePart;
 	_commands["WHO"] = &server::handleWho;
+	_commands["TOPIC"] = &server::handleTopic;
 }
 
 void server::sendReply(int fd, const std::string& msg) {

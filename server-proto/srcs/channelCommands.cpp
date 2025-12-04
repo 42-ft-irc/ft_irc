@@ -196,3 +196,54 @@ void	server::handlePart(int fd, message &msg) {
 		std::cout << "Channel " << channelName << " deleted (empty)." << std::endl;
 	}
 }
+
+void	server::handleTopic(int fd, message &msg) {
+	client* c = _clients[fd];
+
+	// Check if channel name is provided
+	if (msg.params.empty()) {
+		sendReply(fd, ":server " ERR_NOPARAMS " " + c->getNickname() + " TOPIC :Not enough parameters");
+		return;
+	}
+
+	std::string channelName = msg.params[0];
+
+	// Check if channel exists
+	if (_channels.find(channelName) == _channels.end()) {
+		sendReply(fd, ":server " ERR_NOCHAN " " + c->getNickname() + " " + channelName + " :No such channel");
+		return;
+	}
+
+	channel* chan = _channels[channelName];
+
+	// Check if user is on the channel
+	if (!chan->isMember(c)) {
+		sendReply(fd, ":server " ERR_USERNOTINCHAN " " + c->getNickname() + " " + channelName + " :You're not on that channel");
+		return;
+	}
+
+	// Query mode: no topic parameter, just return current topic
+	if (msg.params.size() == 1) {
+		if (chan->getTopic().empty()) {
+			sendReply(fd, ":server " RPL_NOTOPIC " " + c->getNickname() + " " + channelName + " :No topic is set");
+		} else {
+			sendReply(fd, ":server " RPL_YESTOPIC " " + c->getNickname() + " " + channelName + " :" + chan->getTopic());
+		}
+		return;
+	}
+
+	// Set mode: topic parameter provided
+	// Check permissions: if +t mode is set, only operators can change topic
+	if (chan->isTopicRestricted() && !chan->isOperator(c)) {
+		sendReply(fd, ":server " ERR_COPRIVSNEEDED " " + c->getNickname() + " " + channelName + " :You're not channel operator");
+		return;
+	}
+
+	// Set the new topic (can be empty to clear it)
+	std::string newTopic = msg.params[1];
+	chan->setTopic(newTopic);
+
+	// Broadcast the topic change to all channel members
+	std::string topicMsg = ":" + c->getNickname() + "!" + c->getUsername() + "@localhost TOPIC " + channelName + " :" + newTopic;
+	chan->broadcast(topicMsg, NULL);
+}
