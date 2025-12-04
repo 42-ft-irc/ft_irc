@@ -19,9 +19,10 @@ void server::handlePass(int fd, message &msg) {
 }
 
 void server::handleCap(int fd, message &msg) {
-	if (msg.params.size() > 0 && msg.params[0] == "LS") {
+	if (!msg.params.empty() && msg.params[0] == "LS") {
 		sendReply(fd, "CAP * LS :");
 	}
+	
 }
 
 void server::handleNick(int fd, message &msg) {
