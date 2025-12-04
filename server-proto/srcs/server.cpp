@@ -138,18 +138,21 @@ void server::removeClient(int fd) {
 
 	std::cout << "Client disconnected: " << fd << std::endl;
 
-	client* c = _clients[fd];
 	for (std::map<std::string, channel*>::iterator it = _channels.begin(); it != _channels.end(); ) {
-		it->second->removeClient(c);
+		channel* chan = it->second;
+		if (chan->isMember(_clients[fd])) {
+			chan->removeClient(_clients[fd]);
 
-		if (it->second->isEmpty()) {
-			delete it->second;
-			std::map<std::string, channel*>::iterator toErase = it;
-			++it;
-			_channels.erase(toErase);
-		} else {
-			++it;
+			if (chan->getClientCount() == 0) {
+				delete chan;
+				std::map<std::string, channel*>::iterator toErase = it;
+				++it;
+				_channels.erase(toErase);
+				std::cout << "Channel deleted (empty) after client disconnect." << std::endl;
+				continue;
+			}
 		}
+		++it;
 	}
 
 	removeFromPoll(fd);
