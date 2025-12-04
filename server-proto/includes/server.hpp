@@ -53,7 +53,6 @@ class server
 		// utils
 		void		setAddress(void);
 		void		addFD(int new_fd);
-		int			removeClient( int fd, int i );
 		void		processClientCommands( int fd );
 		channel*	getChannelForMode(int fd, message &msg, client* sender);
 
