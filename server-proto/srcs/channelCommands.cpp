@@ -247,3 +247,64 @@ void	server::handleTopic(int fd, message &msg) {
 	std::string topicMsg = ":" + c->getNickname() + "!" + c->getUsername() + "@localhost TOPIC " + channelName + " :" + newTopic;
 	chan->broadcast(topicMsg, NULL);
 }
+
+void	server::handleKick(int fd, message &msg) {
+	client* c = _clients[fd];
+
+	// Check for minimum parameters: channel and user
+	if (msg.params.size() < 2) {
+		sendReply(fd, ":server " ERR_NOPARAMS " " + c->getNickname() + " KICK :Not enough parameters");
+		return;
+	}
+
+	std::string channelName = msg.params[0];
+	std::string targetNick = msg.params[1];
+	std::string reason = (msg.params.size() > 2) ? msg.params[2] : c->getNickname();
+
+	// Check if channel exists
+	if (_channels.find(channelName) == _channels.end()) {
+		sendReply(fd, ":server " ERR_NOCHAN " " + c->getNickname() + " " + channelName + " :No such channel");
+		return;
+	}
+
+	channel* chan = _channels[channelName];
+
+	// Check if kicker is on the channel
+	if (!chan->isMember(c)) {
+		sendReply(fd, ":server " ERR_NOTONCHANNEL " " + c->getNickname() + " " + channelName + " :You're not on that channel");
+		return;
+	}
+
+	// Check if kicker is a channel operator
+	if (!chan->isOperator(c)) {
+		sendReply(fd, ":server " ERR_COPRIVSNEEDED " " + c->getNickname() + " " + channelName + " :You're not channel operator");
+		return;
+	}
+
+	// Find the target user
+	client* target = findClientByNick(targetNick);
+	if (!target) {
+		sendReply(fd, ":server " ERR_NOSUCHNICK " " + c->getNickname() + " " + targetNick + " :No such nick/channel");
+		return;
+	}
+
+	// Check if target is on the channel
+	if (!chan->isMember(target)) {
+		sendReply(fd, ":server " ERR_USERNOTINCHAN " " + c->getNickname() + " " + targetNick + " " + channelName + " :They aren't on that channel");
+		return;
+	}
+
+	// Broadcast the KICK message to all channel members (including the target)
+	std::string kickMsg = ":" + c->getNickname() + "!" + c->getUsername() + "@localhost KICK " + channelName + " " + targetNick + " :" + reason;
+	chan->broadcast(kickMsg, NULL);
+
+	// Remove the target from the channel
+	chan->removeClient(target);
+
+	// Delete channel if empty
+	if (chan->getClientCount() == 0) {
+		_channels.erase(channelName);
+		delete chan;
+		std::cout << "Channel " << channelName << " deleted (empty)." << std::endl;
+	}
+}
