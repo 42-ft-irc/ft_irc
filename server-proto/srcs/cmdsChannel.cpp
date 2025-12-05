@@ -1,14 +1,19 @@
 #include "server.hpp"
 
 void	server::handleJoin( int fd, message &msg ) {
+	client* user = _clients[fd];
+
+	if (!user->isRegistered()) {
+		sendReply(fd, ":server " ERR_NOTREGISTERED " * :You have not registered");
+		return;
+	}
 	if (msg.params.empty()) {
-		sendReply(fd, ":server " ERR_NOPARAMS " " + _clients[fd]->getNickname() + " JOIN :Not enough parameters");
+		sendReply(fd, ":server " ERR_NOPARAMS " " + user->getNickname() + " JOIN :Not enough parameters");
 		return;
 	}
 
 	std::string channelName = msg.params[0];
 	std::string key = (msg.params.size() > 1) ? msg.params[1] : "";
-	client* user = _clients[fd];
 
 	if (channelName[0] != '#' && channelName[0] != '&') {
 		sendReply(fd, ":server " ERR_NOCHAN " " + user->getNickname() + " " + channelName + " :No such channel");
