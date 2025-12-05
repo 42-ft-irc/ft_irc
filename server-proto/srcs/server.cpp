@@ -170,3 +170,26 @@ void server::removeFromPoll(int fd) {
 		}
 	}
 }
+
+channel* server::getChannel(const std::string& name) {
+	if (_channels.find(name) != _channels.end())
+		return _channels[name];
+	return NULL;
+}
+
+channel* server::createChannel(const std::string& name, const std::string& key, client* creator) {
+	channel* newChan = new channel(name, key);
+	if (creator) {
+		newChan->addClient(creator);
+		newChan->addOperator(creator);
+	}
+	_channels[name] = newChan;
+	return newChan;
+}
+
+void server::removeChannel(const std::string& name) {
+	if (_channels.find(name) != _channels.end()) {
+		delete _channels[name];
+		_channels.erase(name);
+	}
+}
