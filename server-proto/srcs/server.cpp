@@ -67,17 +67,18 @@ void server::run() {
 		}
 
 		for (size_t i = 0; i < _pollFds.size(); ++i) {
+			if (_pollFds[i].revents & (POLLHUP | POLLERR | POLLNVAL)) {
+				if (_pollFds[i].fd != _listenerFd) {
+					removeClient(_pollFds[i].fd);
+					i--;
+					continue;
+				}
+			}
 			if (_pollFds[i].revents & POLLIN) {
 				if (_pollFds[i].fd == _listenerFd) {
 					acceptNewClient();
 				} else {
 					handleClientData(_pollFds[i].fd, i);
-				}
-			}
-			if (_pollFds[i].revents & (POLLHUP | POLLERR | POLLNVAL)) {
-				if (_pollFds[i].fd != _listenerFd) {
-					removeClient(_pollFds[i].fd);
-					i--;
 				}
 			}
 		}

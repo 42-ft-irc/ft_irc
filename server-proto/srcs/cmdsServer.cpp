@@ -104,6 +104,7 @@ void server::handleQuit(int fd, message &msg) {
 
 	std::string nick = c->getNickname().empty() ? "*" : c->getNickname();
 	sendReply(fd, "ERROR :Closing Link: " + nick + " (Quit: " + quitMsg + ")");
+	removeClient(fd);
 }
 
 void server::handlePrivmsg(int fd, message &msg) {
