@@ -134,13 +134,18 @@ void server::handlePrivmsg(int fd, message &msg) {
 			if (chan->isMember(sender)) {
 				std::string fullMsg = ":" + senderNick + "!" + sender->getUsername() + "@localhost PRIVMSG " + target + " :" + text;
 				chan->broadcast(fullMsg, sender); // Sender ausschließen
+				// Bot: respond to !hello command
+				if (text == "!hello") {
+					std::string botReply = ":ircbot!bot@localhost PRIVMSG " + target + " :Hello, " + senderNick + "!";
+					chan->broadcast(botReply, NULL);
+				}
 			} else {
 				sendReply(fd, ":server " ERR_CANTSENDCHAN " " + senderNick + " " + target + " :Cannot send to channel");
 			}
 		} else {
 			sendReply(fd, ":server " ERR_NOSUCHNICK " " + senderNick + " " + target + " :No such channel");
 		}
-		return; 
+		return;
 	}
 
 	client* recipient = findClientByNick(target);
@@ -151,6 +156,12 @@ void server::handlePrivmsg(int fd, message &msg) {
 
 	std::string fullMsg = ":" + senderNick + "!" + sender->getUsername() + "@localhost PRIVMSG " + target + " :" + text;
 	sendReply(recipient->getFD(), fullMsg);
+
+	// Bot: respond to !hello command in DM
+	if (text == "!hello") {
+		std::string botReply = ":ircbot!bot@localhost PRIVMSG " + senderNick + " :Hello, " + senderNick + "!";
+		sendReply(fd, botReply);
+	}
 }
 
 void server::handleNotice(int fd, message &msg) {
