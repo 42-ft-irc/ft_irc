@@ -3,7 +3,7 @@
 
 # define BUFFER_SIZE 	1024
 # define PORT			6667
-# define TIMEOUT_POLL	100	
+# define TIMEOUT_POLL	1	
 
 #define RPL_WELCOME		"001"
 #define RPL_YOURHOST	"002"

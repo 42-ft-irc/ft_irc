@@ -64,6 +64,7 @@ class server
 		void	handlePing( int fd, message &msg );
 		void	handleQuit( int fd, message &msg );
 		void	handlePrivmsg( int fd, message &msg );
+		void	handleNotice( int fd, message &msg );
 		void	handleWho(int fd, message &msg);
 		// commands channel 
 		void	handleJoin( int fd, message &msg );

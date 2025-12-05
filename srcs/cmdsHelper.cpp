@@ -8,6 +8,7 @@ void server::initCommands( void ) {
 	_commands["PING"] = &server::handlePing;
 	_commands["QUIT"] = &server::handleQuit;
 	_commands["PRIVMSG"] = &server::handlePrivmsg;
+	_commands["NOTICE"] = &server::handleNotice;
 	_commands["JOIN"] = &server::handleJoin;
 	_commands["MODE"] = &server::handleMode;
 	_commands["PART"] = &server::handlePart;

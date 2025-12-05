@@ -153,6 +153,40 @@ void server::handlePrivmsg(int fd, message &msg) {
 	sendReply(recipient->getFD(), fullMsg);
 }
 
+void server::handleNotice(int fd, message &msg) {
+	client* sender = _clients[fd];
+	std::string senderNick = sender->getNickname();
+
+	// NOTICE must not send error replies per RFC 2812
+	if (!sender->isRegistered())
+		return;
+	if (msg.params.empty())
+		return;
+	if (msg.params.size() < 2 || msg.params[1].empty())
+		return;
+
+	std::string target = msg.params[0];
+	std::string text = msg.params[1];
+
+	if (target[0] == '#') {
+		if (_channels.find(target) != _channels.end()) {
+			channel* chan = _channels[target];
+			if (chan->isMember(sender)) {
+				std::string fullMsg = ":" + senderNick + "!" + sender->getUsername() + "@localhost NOTICE " + target + " :" + text;
+				chan->broadcast(fullMsg, sender);
+			}
+		}
+		return;
+	}
+
+	client* recipient = findClientByNick(target);
+	if (!recipient)
+		return;
+
+	std::string fullMsg = ":" + senderNick + "!" + sender->getUsername() + "@localhost NOTICE " + target + " :" + text;
+	sendReply(recipient->getFD(), fullMsg);
+}
+
 void	server::handleWho(int fd, message &msg) {
     std::string target = "";
     if (!msg.params.empty())
