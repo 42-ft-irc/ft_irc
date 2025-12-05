@@ -71,12 +71,14 @@ void server::run() {
 				if (_pollFds[i].fd == _listenerFd) {
 					acceptNewClient();
 				} else {
-					handleClientData(_pollFds[i].fd);
+					handleClientData(_pollFds[i].fd, i);
 				}
 			}
 			if (_pollFds[i].revents & (POLLHUP | POLLERR | POLLNVAL)) {
-				if (_pollFds[i].fd != _listenerFd)
+				if (_pollFds[i].fd != _listenerFd) {
 					removeClient(_pollFds[i].fd);
+					i--;
+				}
 			}
 		}
 	}
@@ -105,7 +107,7 @@ void server::acceptNewClient() {
 	std::cout << "New client connected: " << newFd << std::endl;
 }
 
-void server::handleClientData(int fd) {
+void server::handleClientData(int fd, size_t &i) {
 	char buffer[BUFFER_SIZE];
 	std::memset(buffer, 0, sizeof(buffer));
 
@@ -113,6 +115,7 @@ void server::handleClientData(int fd) {
 
 	if (bytes <= 0) {
 		removeClient(fd);
+		i--;
 	} else {
 		if (_clients.find(fd) != _clients.end()) {
 			_clients[fd]->appendToBuffer(buffer);

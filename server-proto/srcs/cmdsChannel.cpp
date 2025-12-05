@@ -1,161 +1,364 @@
 #include "server.hpp"
 
-void server::handlePass(int fd, message &msg) {
-	client* c = _clients[fd];
 
-	if (c->isRegistered()) {
-		sendReply(fd, ":server " ERR_NOREGISTER " " + c->getNickname() + " :You may not reregister");
-		return;
-	}
+void	server::handleJoin( int fd, message &msg ) {
 	if (msg.params.empty()) {
-		sendReply(fd, ":server " ERR_NOPARAMS " * PASS :Not enough parameters");
+		sendReply(fd, ":server " ERR_NOPARAMS " " + _clients[fd]->getNickname() + " JOIN :Not enough parameters");
 		return;
 	}
-	if (msg.params[0] != _password) {
-		sendReply(fd, ":server " ERR_PASSWDMISMATCH " * :Password incorrect");
-		return;
-	}
-	c->setAuthenticated(true);
-}
 
-void server::handleCap(int fd, message &msg) {
-	if (!msg.params.empty() && msg.params[0] == "LS") {
-		sendReply(fd, "CAP * LS :");
+	std::string channelName = msg.params[0];
+	std::string key = (msg.params.size() > 1) ? msg.params[1] : "";
+	client* user = _clients[fd];
+
+	if (channelName[0] != '#' && channelName[0] != '&') {
+		sendReply(fd, ":server " ERR_NOCHAN " " + user->getNickname() + " " + channelName + " :No such channel");
+		return;
+	}
+
+	if (_channels.find(channelName) == _channels.end()) {
+		_channels[channelName] = new channel(channelName, key);
+		_channels[channelName]->addClient(_clients[fd]);
+		_channels[channelName]->addOperator(_clients[fd]);
+	}
+	else {
+		channel* chan = _channels[channelName];
+		if (chan->isMember(user))
+			return;
+		if (!chan->getKey().empty() && chan->getKey() != key) {
+			sendReply(fd, ":server " ERR_CANTJOINK " " + user->getNickname() + " " + channelName + " :Cannot join channel (+k)");
+			return;
+		}
+		if (chan->getLimit() > 0 && (int)chan->getClientCount() >= chan->getLimit()) {
+			sendReply(fd, ":server " ERR_CANTJOINL " " + user->getNickname() + " " + channelName + " :Cannot join channel (+l)");
+			return;
+		}
+		if (chan->getModes().find('i') != std::string::npos && !chan->isInvited(user)) {
+			sendReply(fd, ":server " ERR_CANTJOINI " " + user->getNickname() + " " + channelName + " :Cannot join channel (+i)");
+			return;
+		}
+		chan->removeInvite(user);
+		chan->addClient(user);
+	}
+	std::string joinMsg = ":" + user->getNickname() + "!" + user->getUsername() + "@localhost JOIN :" + channelName;
+	
+	_channels[channelName]->broadcast(joinMsg, NULL);
+
+	if (!_channels[channelName]->getTopic().empty()) {
+		sendReply(fd, ":server " RPL_YESTOPIC " " + user->getNickname() + " " + channelName + " :" + _channels[channelName]->getTopic());
+	} else {
+		sendReply(fd, ":server " RPL_NOTOPIC " " + user->getNickname() + " " + channelName + " :No topic is set");
+	}
+	std::string names;
+	const std::vector<client*>& members = _channels[channelName]->getClients();
+
+	for (size_t i = 0; i < members.size(); i++) {
+		if (_channels[channelName]->isOperator(members[i]))
+			names += "@";
+		names += members[i]->getNickname() + " ";
 	}
 	
+	sendReply(fd, ":server " RPL_LISTNAMES " " + user->getNickname() + " = " + channelName + " :" + names);
+	sendReply(fd, ":server " RPL_ENDLISTN " " + user->getNickname() + " " + channelName + " :End of /NAMES list");
 }
 
-void server::handleNick(int fd, message &msg) {
+void	server::handleMode(int fd, message &msg) {
 	client* c = _clients[fd];
-
-	if (!c->isAuthenticated()) {
-		sendReply(fd, ":server " ERR_NOTREGISTERED " * :You have not registered");
-		return;
-	}
-	if (msg.params.empty()) {
-		sendReply(fd, ":server " ERR_NONICKGIVEN " * :No nickname given");
-		return;
-	}
-
-	std::string oldNick = c->getNickname();
-	std::string newNick = msg.params[0];
-
-	client* existing = findClientByNick(newNick);
-	if (existing && existing != c) {
-		sendReply(fd, ":server " ERR_NICKNAMEINUSE " " + (oldNick.empty() ? "*" : oldNick) + " " + newNick + " :Nickname is already in use");
-		return;
-	}
-
-	c->setNickname(newNick);
-
-	if (c->isRegistered()) {
-		std::string nickMsg = ":" + oldNick + "!" + c->getUsername() + "@localhost NICK :" + newNick;
-		sendReply(fd, nickMsg);
-
-		for (std::map<std::string, channel*>::iterator it = _channels.begin(); it != _channels.end(); ++it) {
-			if (it->second->isMember(c)) {
-				it->second->broadcast(nickMsg, c);
-			}
-		}
-	}
-
-	if (c->isRegistered()) {
-		sendReply(fd, ":" + oldNick + " NICK " + newNick);
-	} else if (!c->getNickname().empty() && !c->getUsername().empty()) {
-		welcomeClient(fd);
-	}
-}
-
-void server::handleUser(int fd, message &msg) {
-	client* c = _clients[fd];
-
-	if (!c->isAuthenticated()) {
-		sendReply(fd, ":server " ERR_NOTREGISTERED " * :You have not registered");
-		return;
-	}
-	if (msg.params.size() < 4) {
-		sendReply(fd, ":server " ERR_NOPARAMS " * USER :Not enough parameters");
-		return;
-	}
-	if (c->isRegistered()) {
-		sendReply(fd, ":server " ERR_NOREGISTER " " + c->getNickname() + " :You may not reregister");
-		return;
-	}
-	c->setUsername(msg.params[0]);
-
-	if (!c->isRegistered() && !c->getNickname().empty() && !c->getUsername().empty()) {
-		welcomeClient(fd);
-	}
-}
-
-void server::handlePing(int fd, message &msg) {
-	std::string response = ":server PONG server";
-	if (!msg.params.empty())
-		response += " :" + msg.params[0];
-	sendReply(fd, response);
-}
-
-void server::handleQuit(int fd, message &msg) {
-	client* c = _clients[fd];
-	std::string quitMsg = "Client Quit";
-
-	if (!msg.params.empty())
-		quitMsg = msg.params[0];
-
-	std::string nick = c->getNickname().empty() ? "*" : c->getNickname();
-	sendReply(fd, "ERROR :Closing Link: " + nick + " (Quit: " + quitMsg + ")");
-}
-
-void server::handlePrivmsg(int fd, message &msg) {
-	client* sender = _clients[fd];
-	std::string senderNick = sender->getNickname();
-
-	if (!sender->isRegistered()) {
-		sendReply(fd, ":server " ERR_NOTREGISTERED " * :You have not registered");
-		return;
-	}
-	if (msg.params.empty()) {
-		sendReply(fd, ":server " ERR_NORECIPIENT " " + senderNick + " :No recipient given (PRIVMSG)");
-		return;
-	}
-	if (msg.params.size() < 2 || msg.params[1].empty()) {
-		sendReply(fd, ":server " ERR_NOTEXTTOSEND " " + senderNick + " :No text to send");
-		return;
-	}
-
+	channel* chan = getChannelForMode(fd, msg, c);
+	if (!chan) return ;
 	std::string target = msg.params[0];
-	std::string text = msg.params[1];
 
-	if (target[0] == '#') {
-		if (_channels.find(target) != _channels.end()) {
-			channel* chan = _channels[target];
-			// Optional: Prüfen ob Sender Mitglied ist (wenn +n Mode aktiv ist)
-			if (chan->isMember(sender)) {
-				std::string fullMsg = ":" + senderNick + "!" + sender->getUsername() + "@localhost PRIVMSG " + target + " :" + text;
-				chan->broadcast(fullMsg, sender); // Sender ausschließen
-			} else {
-				sendReply(fd, ":server " ERR_CANTSENDCHAN " " + senderNick + " " + target + " :Cannot send to channel");
-			}
-		} else {
-			sendReply(fd, ":server " ERR_NOSUCHNICK " " + senderNick + " " + target + " :No such channel");
+	// Mode for only reading, reply: modes + values from modes
+	if (msg.params.size() == 1) {
+		std::string modeString = chan->getModes();
+		std::string args = "";
+		if (!chan->getKey().empty()) 
+			args += " " + chan->getKey();
+		if (chan->getLimit() > 0) {
+			std::stringstream ss;
+			ss << chan->getLimit();
+			args += " " + ss.str();
 		}
-		return; 
-	}
-
-	client* recipient = findClientByNick(target);
-	if (!recipient) {
-		sendReply(fd, ":server " ERR_NOSUCHNICK " " + senderNick + " " + target + " :No such nick/channel");
+		sendReply(fd, ":server " RPL_CHANMODEIS " " + c->getNickname() + " " + target + " " + modeString + args);
 		return;
 	}
 
-	std::string fullMsg = ":" + senderNick + "!" + sender->getUsername() + "@localhost PRIVMSG " + target + " :" + text;
-	sendReply(recipient->getFD(), fullMsg);
+	// Mode for changing Modes, only possible for admins
+	if (!chan->isOperator(c)) {
+		sendReply(fd, ":server " ERR_COPRIVSNEEDED " " + c->getNickname() + " " + target + " :You're not channel operator");
+		return;
+	}
+
+	std::string modeStr = msg.params[1];
+	std::string changes = ""; // String, um erfolgreiche Änderungen zu speichern (für Broadcast)
+	std::string argsOut = "";
+	
+	bool adding = true;
+	size_t argIndex = 2;
+
+	for (size_t i = 0; i < modeStr.length(); ++i) {
+		char mode = modeStr[i];
+		if (mode == '+') {
+			adding = true;
+			changes += "+";
+		} else if (mode == '-') {
+			adding = false;
+			changes += "-";
+		} else {
+			switch (mode) {
+				case 'i':
+					chan->setInviteOnly(adding);
+					changes += "i";
+					break;
+				case 't':
+					chan->setTopicRestricted(adding);
+					changes += "t";
+					break;
+				case 'k':
+					if (adding) {
+						if (argIndex < msg.params.size()) {
+							std::string key = msg.params[argIndex++];
+							chan->setKey(key);
+							changes += "k";
+							argsOut += " " + key;
+						}
+					} else {
+						chan->setKey("");
+						changes += "k";
+					}
+					break;
+				case 'l':
+					if (adding) {
+						if (argIndex < msg.params.size()) {
+							int limit = atoi(msg.params[argIndex++].c_str());
+							chan->setLimit(limit);
+							changes += "l";
+							std::stringstream ss; ss << limit;
+							argsOut += " " + ss.str();
+						}
+					} else {
+						chan->setLimit(0);
+						changes += "l";
+					}
+					break;
+				case 'o':
+					if (argIndex < msg.params.size()) {
+						std::string targetNick = msg.params[argIndex++];
+						client* targetClient = findClientByNick(targetNick);
+						
+						if (targetClient && chan->isMember(targetClient)) {
+							if (adding) chan->addOperator(targetClient);
+							else chan->removeOperator(targetClient);
+							
+							changes += "o";
+							argsOut += " " + targetNick;
+						} else {
+							sendReply(fd, ":server " ERR_NOSUCHNICK " " + c->getNickname() + " " + targetNick + " :No such nick/channel");
+						}
+					}
+					break;
+				default:
+					sendReply(fd, ":server " ERR_UNKNOWNMODE " " + c->getNickname() + " " + std::string(1, mode) + " :is unknown mode char to me");
+					break;
+			}
+		}
+	}
+
+	// broadcast changes
+	if (!changes.empty() && changes != "+" && changes != "-") {
+		std::string finalMsg = ":" + c->getNickname() + "!" + c->getUsername() + "@localhost MODE " + target + " " + changes + argsOut;
+		chan->broadcast(finalMsg, NULL);
+	}
 }
 
-void	server::handleWho(int fd, message &msg) {
-    std::string target = "";
-    if (!msg.params.empty())
-        target = msg.params[0];
+void	server::handlePart(int fd, message &msg) {
+	client* c = _clients[fd];
+	if (msg.params.empty()) {
+		sendReply(fd, ":server " ERR_NOPARAMS " " + c->getNickname() + " PART :Not enough parameters");
+		return;
+	}
+	std::string channelName = msg.params[0];
+	std::string reason = (msg.params.size() > 1) ? msg.params[1] : "Leaving";
+	if (_channels.find(channelName) == _channels.end()) {
+		sendReply(fd, ":server " ERR_NOCHAN " " + c->getNickname() + " " + channelName + " :No such channel");
+		return;
+	}
+	channel* chan = _channels[channelName];
+	if (!chan->isMember(c)) {
+		sendReply(fd, ":server " ERR_USERNOTINCHAN " " + c->getNickname() + " " + channelName + " :You're not on that channel");
+		return;
+	}
+	std::string partMsg = ":" + c->getNickname() + "!" + c->getUsername() + "@localhost PART " + channelName + " :" + reason;
+	chan->broadcast(partMsg, NULL);
+	chan->removeClient(c);
+	if (chan->getClientCount() == 0) {
+		_channels.erase(channelName);
+		delete chan;
+		std::cout << "Channel " << channelName << " deleted (empty)." << std::endl;
+	}
+}
 
-    sendReply(fd, ":server " RPL_ENDOFWHO " " + _clients[fd]->getNickname() + " " + target + " :End of /WHO list");
+void	server::handleTopic(int fd, message &msg) {
+	client* c = _clients[fd];
+
+	// Check if channel name is provided
+	if (msg.params.empty()) {
+		sendReply(fd, ":server " ERR_NOPARAMS " " + c->getNickname() + " TOPIC :Not enough parameters");
+		return;
+	}
+
+	std::string channelName = msg.params[0];
+
+	// Check if channel exists
+	if (_channels.find(channelName) == _channels.end()) {
+		sendReply(fd, ":server " ERR_NOCHAN " " + c->getNickname() + " " + channelName + " :No such channel");
+		return;
+	}
+
+	channel* chan = _channels[channelName];
+
+	// Check if user is on the channel
+	if (!chan->isMember(c)) {
+		sendReply(fd, ":server " ERR_USERNOTINCHAN " " + c->getNickname() + " " + channelName + " :You're not on that channel");
+		return;
+	}
+
+	// Query mode: no topic parameter, just return current topic
+	if (msg.params.size() == 1) {
+		if (chan->getTopic().empty()) {
+			sendReply(fd, ":server " RPL_NOTOPIC " " + c->getNickname() + " " + channelName + " :No topic is set");
+		} else {
+			sendReply(fd, ":server " RPL_YESTOPIC " " + c->getNickname() + " " + channelName + " :" + chan->getTopic());
+		}
+		return;
+	}
+
+	// Set mode: topic parameter provided
+	// Check permissions: if +t mode is set, only operators can change topic
+	if (chan->isTopicRestricted() && !chan->isOperator(c)) {
+		sendReply(fd, ":server " ERR_COPRIVSNEEDED " " + c->getNickname() + " " + channelName + " :You're not channel operator");
+		return;
+	}
+
+	// Set the new topic (can be empty to clear it)
+	std::string newTopic = msg.params[1];
+	chan->setTopic(newTopic);
+
+	// Broadcast the topic change to all channel members
+	std::string topicMsg = ":" + c->getNickname() + "!" + c->getUsername() + "@localhost TOPIC " + channelName + " :" + newTopic;
+	chan->broadcast(topicMsg, NULL);
+}
+
+void	server::handleKick(int fd, message &msg) {
+	client* c = _clients[fd];
+
+	// Check for minimum parameters: channel and user
+	if (msg.params.size() < 2) {
+		sendReply(fd, ":server " ERR_NOPARAMS " " + c->getNickname() + " KICK :Not enough parameters");
+		return;
+	}
+
+	std::string channelName = msg.params[0];
+	std::string targetNick = msg.params[1];
+	std::string reason = (msg.params.size() > 2) ? msg.params[2] : c->getNickname();
+
+	// Check if channel exists
+	if (_channels.find(channelName) == _channels.end()) {
+		sendReply(fd, ":server " ERR_NOCHAN " " + c->getNickname() + " " + channelName + " :No such channel");
+		return;
+	}
+
+	channel* chan = _channels[channelName];
+
+	// Check if kicker is on the channel
+	if (!chan->isMember(c)) {
+		sendReply(fd, ":server " ERR_NOTONCHANNEL " " + c->getNickname() + " " + channelName + " :You're not on that channel");
+		return;
+	}
+
+	// Check if kicker is a channel operator
+	if (!chan->isOperator(c)) {
+		sendReply(fd, ":server " ERR_COPRIVSNEEDED " " + c->getNickname() + " " + channelName + " :You're not channel operator");
+		return;
+	}
+
+	// Find the target user
+	client* target = findClientByNick(targetNick);
+	if (!target) {
+		sendReply(fd, ":server " ERR_NOSUCHNICK " " + c->getNickname() + " " + targetNick + " :No such nick/channel");
+		return;
+	}
+
+	// Check if target is on the channel
+	if (!chan->isMember(target)) {
+		sendReply(fd, ":server " ERR_USERNOTINCHAN " " + c->getNickname() + " " + targetNick + " " + channelName + " :They aren't on that channel");
+		return;
+	}
+
+	// Broadcast the KICK message to all channel members (including the target)
+	std::string kickMsg = ":" + c->getNickname() + "!" + c->getUsername() + "@localhost KICK " + channelName + " " + targetNick + " :" + reason;
+	chan->broadcast(kickMsg, NULL);
+
+	// Remove the target from the channel
+	chan->removeClient(target);
+
+	// Delete channel if empty
+	if (chan->getClientCount() == 0) {
+		_channels.erase(channelName);
+		delete chan;
+		std::cout << "Channel " << channelName << " deleted (empty)." << std::endl;
+	}
+}
+
+void	server::handleInvite(int fd, message &msg) {
+	client* c = _clients[fd];
+
+	// Check for required parameters: nickname and channel
+	if (msg.params.size() < 2) {
+		sendReply(fd, ":server " ERR_NOPARAMS " " + c->getNickname() + " INVITE :Not enough parameters");
+		return;
+	}
+
+	std::string targetNick = msg.params[0];
+	std::string channelName = msg.params[1];
+
+	// Find the target user
+	client* target = findClientByNick(targetNick);
+	if (!target) {
+		sendReply(fd, ":server " ERR_NOSUCHNICK " " + c->getNickname() + " " + targetNick + " :No such nick/channel");
+		return;
+	}
+
+	// Check if channel exists - if it does, inviter must be a member
+	if (_channels.find(channelName) != _channels.end()) {
+		channel* chan = _channels[channelName];
+
+		// Check if inviter is on the channel
+		if (!chan->isMember(c)) {
+			sendReply(fd, ":server " ERR_NOTONCHANNEL " " + c->getNickname() + " " + channelName + " :You're not on that channel");
+			return;
+		}
+
+		// Check if target is already on the channel
+		if (chan->isMember(target)) {
+			sendReply(fd, ":server " ERR_USERONCHANNEL " " + c->getNickname() + " " + targetNick + " " + channelName + " :is already on channel");
+			return;
+		}
+
+		// If channel is invite-only, only operators can invite
+		if (chan->getModes().find('i') != std::string::npos && !chan->isOperator(c)) {
+			sendReply(fd, ":server " ERR_COPRIVSNEEDED " " + c->getNickname() + " " + channelName + " :You're not channel operator");
+			return;
+		}
+
+		// Add target to invite list
+		chan->addInvite(target);
+	}
+
+	// Send RPL_INVITING to the inviter
+	sendReply(fd, ":server " RPL_INVITING " " + c->getNickname() + " " + targetNick + " " + channelName);
+
+	// Send INVITE message to the target
+	std::string inviteMsg = ":" + c->getNickname() + "!" + c->getUsername() + "@localhost INVITE " + targetNick + " :" + channelName;
+	sendReply(target->getFD(), inviteMsg);
 }
