@@ -28,7 +28,7 @@ class server
 		void		createSocket();
 		void		bindAndListen();
 		void		acceptNewClient();
-		void		handleClientData(int fd);
+		void		handleClientData(int fd, size_t &i);
 		void		removeFromPoll(int fd);
 
 	public:
