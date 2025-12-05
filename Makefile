@@ -1,11 +1,11 @@
 CXX = g++
 CXXFLAGS = -Wall -Wextra -Werror -std=c++98
-INCLUDES = -I server-proto/includes/
+INCLUDES = -I includes/
 
 SERVER_NAME = ircserv
 
-SERVER_DIR = server-proto/srcs
-OBJS_DIR = server-proto/objs
+SERVER_DIR = srcs
+OBJS_DIR = objs
 
 SERVER_SRCS = $(shell find $(SERVER_DIR) -name '*.cpp')
 
