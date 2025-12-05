@@ -56,7 +56,7 @@ class server
 		void		processClientCommands( int fd );
 		channel*	getChannelForMode(int fd, message &msg, client* sender);
 
-		// server commands
+		// commands server 
 		void	handlePass( int fd, message &msg );
 		void	handleCap( int fd, message &msg );
 		void	handleNick( int fd, message &msg );
@@ -65,14 +65,13 @@ class server
 		void	handleQuit( int fd, message &msg );
 		void	handlePrivmsg( int fd, message &msg );
 		void	handleWho(int fd, message &msg);
-		// channel commands
+		// commands channel 
 		void	handleJoin( int fd, message &msg );
 		void	handleMode( int fd, message &msg );
 		void	handlePart(int fd, message &msg);
 		void	handleTopic(int fd, message &msg);
 		void	handleKick(int fd, message &msg);
 		void	handleInvite(int fd, message &msg);
-
 		// command util
 		void	welcomeClient( int fd );
 		void	sendReply(int fd, const std::string& msg);
