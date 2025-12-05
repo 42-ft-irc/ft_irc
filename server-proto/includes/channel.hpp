@@ -1,61 +1,76 @@
 #ifndef CHANNEL_HPP
 #define CHANNEL_HPP
+
 #include "libraries.hpp"
-#include "client.hpp"
+
+class client;
 
 class channel
 {
 	private:
-		std::string				_name;
-		std::string				_topic;
-		std::string				_key;
-
-		bool					_inviteOnly;
-		bool					_topicRestricted;
-		int						_limit;
-
-		std::vector<client*> _operators;
-		std::vector<client*> _clients;
-		std::vector<client*> _invited;
-	
+		// Disabled
 		channel();
-		channel(const channel &src);
-		channel &operator=(const channel &src);
+		channel(const channel& src);
+		channel& operator=(const channel& src);
 
+		// Channel info
+		std::string	_name;
+		std::string	_topic;
+		std::string	_key;
+
+		// Mode flags
+		bool	_inviteOnly;
+		bool	_topicRestricted;
+		int		_limit;
+
+		// Member lists
+		std::vector<client*>	_operators;
+		std::vector<client*>	_clients;
+		std::vector<client*>	_invited;
+		
 	public:
-		channel( std::string name, std::string key );
+		// Constructors & Destructor
+		channel(const std::string& name, const std::string& key);
 		~channel();
 
-		std::string					getName() const;
-		std::string					getTopic() const;
-		std::string					getKey() const;
+		// Getters
+		const std::string&			getName() const;
+		const std::string&			getTopic() const;
+		const std::string&			getKey() const;
 		int							getLimit() const;
 		std::string					getModes() const;
-		size_t						getClientCount() const ;
-		const std::vector<client*>&	getClients() const ;
+		size_t						getClientCount() const;
+		const std::vector<client*>&	getClients() const;
 
-		void	setTopic(std::string topic);
-		void	setKey(std::string key);
+		// State queries
+		bool	isMember(const client* c) const;
+		bool	isOperator(const client* c) const;
+		bool	isInvited(const client* c) const;
+		bool	isEmpty() const;
+		bool	isInviteOnly() const;
+		bool	isTopicRestricted() const;
+
+		// Setters
+		void	setTopic(const std::string& topic);
+		void	setKey(const std::string& key);
 		void	setLimit(int limit);
 		void	setInviteOnly(bool status);
 		void	setTopicRestricted(bool status);
 
-		void	addClient(client* new_client);
-		void	removeClient(client* client_to_remove);
+		// Client management
+		void	addClient(client* c);
+		void	removeClient(client* c);
 
-		void	addOperator(client* new_op);
-		void	removeOperator(client* op_to_remove);
+		// Operator management
+		void	addOperator(client* c);
+		void	removeOperator(client* c);
 
-		bool	isMember(client* c);
-		bool	isOperator(client* c);
-		bool	isEmpty() const;
-		bool	isTopicRestricted() const;
-		bool	isInvited(client* c);
-
+		// Invite management
 		void	addInvite(client* c);
 		void	removeInvite(client* c);
 
-		void	broadcast(std::string message, client* sender);
+		// Messaging
+		void	broadcast(const std::string& message, client* sender);
 };
 
 #endif
