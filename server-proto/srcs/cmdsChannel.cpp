@@ -196,6 +196,7 @@ void	server::handlePart(int fd, message &msg) {
 		removeChannel(channelName);
 		std::cout << "Channel " << channelName << " deleted (empty)." << std::endl;
 	}
+}
 
 void	server::handleTopic(int fd, message &msg) {
 	client* c = _clients[fd];
